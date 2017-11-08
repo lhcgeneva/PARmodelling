@@ -67,14 +67,14 @@ class ParSim(object):
         x = linspace(0, self.grid_size*self.dx, self.grid_size)
         if self.ssIteration == -1:
             plot(x, self.A[:, -1])
-            plot(x, self.P[:, -1])            
+            plot(x, self.P[:, -1])
         else:
             plot(x, self.A[:, int(self.ssIteration/self.save_nth)])
             plot(x, self.P[:, int(self.ssIteration/self.save_nth)])
         show()
 
     def set_init_profile(self):
-        self.A = 2*ones((self.grid_size, int(ceil(self.n/self.save_nth))))*1.0
+        self.A = ones((self.grid_size, int(ceil(self.n/self.save_nth))))*1.0
         self.P = ones((self.grid_size, int(ceil(self.n/self.save_nth))))*1.0
 
         if self.bc == 'PER':
@@ -142,8 +142,10 @@ class ParSim(object):
             i_e = self.A.shape[1]
         else:
             i_e = argmax(sum(self.A, 0) == 2*self.grid_size)
+            i_e = int(self.ssIteration/self.save_nth)
+        # Tracer()()
         a = animation.FuncAnimation(fig, animate, init_func=init,
-                                    frames=range(0, int(i_e), int(i_e/20)),
+                                    frames=range(0, int(i_e), 10),
                                     interval=100, blit=False)
         if fname is None:
             a.save('lines.mp4', savefig_kwargs={'facecolor': 'black'}, dpi=200)
@@ -189,20 +191,12 @@ class ParSim(object):
             return False
 
         if self.bc == 'PER':
-            def laplacian(Z):
-                l = len(Z)
-                Z = r_[Z, Z, Z]
-                Zleft = Z[0:-2]
-                Zright = Z[2:]
-                Zcenter = Z[1:-1]
-                LAP = (Zleft + Zright - 2*Zcenter) / self.dx**2
-                return LAP[l-1:2*l-1]
             self.set_init_profile()
             An = copy(self.A[:, 0])
             Pn = copy(self.P[:, 0])
             for i in range(self.n-1):
-                deltaA = laplacian(An)
-                deltaP = laplacian(Pn)
+                deltaA = laplacianPER(An, self.dx)
+                deltaP = laplacianPER(Pn, self.dx)
                 Acy = self.Atot - self.StoV*sum(An)/self.grid_size
                 Pcy = self.Ptot - self.StoV*sum(Pn)/self.grid_size
                 An = An+self.dt*(self.dA*deltaA - self.koffA*An +
@@ -213,17 +207,12 @@ class ParSim(object):
                     break
 
         elif self.bc == 'NEU':
-            def laplacian(Z):
-                Zleft = Z[0:-2]
-                Zright = Z[2:]
-                Zcenter = Z[1:-1]
-                return (Zleft + Zright - 2*Zcenter) / self.dx**2
             self.set_init_profile()
             An = copy(self.A[:, 0])
             Pn = copy(self.P[:, 0])
             for i in range(self.n-1):
-                deltaA = laplacian(An)
-                deltaP = laplacian(Pn)
+                deltaA = laplacianNEU(An, self.dx)
+                deltaP = laplacianNEU(Pn, self.dx)
                 Acy = self.Atot - self.StoV*sum(flipud(An), 0)/self.grid_size
                 Pcy = self.Ptot - self.StoV*sum(Pn, 0)/self.grid_size
                 # Defining Ra and Rp separately is necessary in order to not
@@ -233,9 +222,16 @@ class ParSim(object):
                               self.kPA*An[1:-1]**self.beta*Pn[1:-1])
                 Ra = self.dt*(self.dA*deltaA-self.koffA*An[1:-1]+self.konA*Acy -
                               self.kAP*Pn[1:-1]**self.alpha*An[1:-1])
+                # Hill function instead of mass action for antagonism
+                # if i==1000:
+                    # Tracer()()
+                # Rp = self.dt*(self.dP*deltaP-self.koffP*Pn[1:-1]+self.konP*Pcy -
+                #               self.kPA*An[1:-1]**self.beta*Pn[1:-1]/(0.1**self.beta+An[1:-1]**self.beta))
+                # Ra = self.dt*(self.dA*deltaA-self.koffA*An[1:-1]+self.konA*Acy -
+                #               self.kAP*Pn[1:-1]**self.alpha*An[1:-1]/(0.1**self.alpha+Pn[1:-1]**self.alpha))
                 Pn[1:-1] = Pn[1:-1] + Rp
                 An[1:-1] = An[1:-1] + Ra
-                # Neumann conditions
+
                 for Z in (An, Pn):
                     Z[0] = Z[1]
                     Z[-1] = Z[-2]
@@ -251,7 +247,6 @@ class Sim_Container:
     def __init__(self, param_dict, no_workers=8, sys='symmetric'):
         self.param_dict = param_dict
         # self.r = r
-
         self.no_workers = no_workers
         self.sys = sys
 
@@ -262,17 +257,32 @@ class Sim_Container:
                 self.simList.append(ParSim(alpha=2, beta=2, dA=0.15, dP=0.15,
                                            dt=0.05, kAP=1, kPA=1, koffA=0.005,
                                            koffP=0.005, konA=0.006, konP=0.006,
-                                           ratio=1.01, grid_size=200,
+                                           ratio=1.01, grid_size=100,
                                            ss_prec=0.000001, sys_size=k,
-                                           T=120000, save_nth=400))
+                                           T=1200, save_nth=400))
             elif self.sys == 'asymmetric':
-                self.simList.append(ParSim(alpha=2, beta=2, dA=0.015, dP=0.15,
-                                           dt=0.05, kAP=1, kPA=1, koffA=0.005,
-                                           koffP=0.005, konA=0.06, konP=0.06,
-                                           ratio=1.01, grid_size=200,
-                                           ss_prec=0.000001, sys_size=k,
-                                           T=120000, save_nth=400))
-
+                self.simList.append(ParSim(alpha=2, beta=2, dA=k, dP=0.35,
+                                           dt=0.01, kAP=1, kPA=1, koffA=0.005,
+                                           koffP=0.005, konA=0.006, konP=0.006,
+                                           ratio=1.00, grid_size=100,
+                                           ss_prec=0.0001, sys_size=40.0,
+                                           T=100000, save_nth=1000))            
+            elif self.sys == 'Tom':
+                self.simList.append(ParSim(alpha=2, beta=2, dA=1, dP=1,
+                                           dt=0.001, kAP=1.3, kPA=1.3,
+                                           koffA=0.3, koffP=0.3, konA=1,
+                                           konP=1, ratio=1.00, grid_size=100,
+                                           ss_prec=0.001, StoV=0.3,
+                                           sys_size=50.0, T=100000,
+                                           save_nth=1000))
+            elif self.sys == 'TomHill':
+                self.simList.append(ParSim(alpha=2, beta=2, dA=1, dP=1,
+                                           dt=0.005, kAP=100*0.25,
+                                           kPA=100*0.25, koffA=0.3,
+                                           koffP=0.3, konA=1, konP=1,
+                                           ratio=1.0, grid_size=100,
+                                           ss_prec=0.001, sys_size=100,
+                                           T=10000, save_nth=1000))   
             elif self.sys == 'PARsys':
                 self.simList.append(ParSim())
 
@@ -291,22 +301,43 @@ class Sim_Container:
     def plot_all_ss(self):
         for i in self.simus:
             i.plot_steady_state()
-            # print(str(i.D))
-            # print(str(i.koff))
-            # print(str(i.dx*i.grid_size))
         show()
 
     def run_simus(self):
-        # Create pool, use starmap to pass more than one parameter, do work
-        # pool = Pool(processes=self.no_workers)
-        # res = pool.map(sim_indiv, self.simList)
-        # self.simus = res
-        # pool.close()
-        # pool.join()
-        self.simus = [sim_indiv(self.simList[0])]
+
+        if self.no_workers == 1:
+            self.simus = []
+            for i in self.simList:
+                self.simus.append(sim_indiv(i))
+        else:
+            # Create pool, use starmap to pass more than one parameter, do work
+            pool = Pool(processes=self.no_workers)
+            res = pool.map(sim_indiv, self.simList)
+            self.simus = res
+            pool.close()
+            pool.join()
+
+
+def laplacianNEU(Z, dx):
+    Zleft = Z[0:-2]
+    Zright = Z[2:]
+    Zcenter = Z[1:-1]
+    return (Zleft + Zright - 2*Zcenter) / dx**2
+
+
+def laplacianPER(Z, dx):
+    l = len(Z)
+    Z = r_[Z, Z, Z]
+    Zleft = Z[0:-2]
+    Zright = Z[2:]
+    Zcenter = Z[1:-1]
+    LAP = (Zleft + Zright - 2*Zcenter) / dx**2
+    return LAP[l-1:2*l-1]
 
 
 def s_to_v(mode, describers):
+    ''''Calculate surface area to volume ratio for ellipsoid'''
+
     if mode is 'Circumference':
         circ = describers[0]
         aspRatio = describers[1]

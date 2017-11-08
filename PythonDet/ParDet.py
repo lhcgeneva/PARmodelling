@@ -55,7 +55,7 @@ class ParSim(object):
     def plot_steady_state(self):
         if self.ssIteration == -1:
             plot(self.A[:, -1])
-            plot(self.P[:, -1])            
+            plot(self.P[:, -1])
         else:
             plot(self.A[:, int(self.ssIteration/self.save_nth)])
             plot(self.P[:, int(self.ssIteration/self.save_nth)])

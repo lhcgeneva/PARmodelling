@@ -73,6 +73,9 @@ target/
 # pyenv
 .python-version
 
+# pickled files
+*.pickle
+
 # celery beat schedule file
 celerybeat-schedule
 
@@ -102,3 +105,6 @@ ENV/
 
 # Matlab files
 *.mat
+
+# Movies
+*.mp4

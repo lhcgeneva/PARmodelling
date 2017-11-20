@@ -1,8 +1,8 @@
 from IPython.core.debugger import Tracer
 from IPython.display import HTML
 from itertools import repeat
-from numpy import (argmax, array_equal, ceil, copy, flipud, float64, linspace,
-                   mean, ones, r_, random, round, sqrt, sum)
+from numpy import (abs, argmax, array_equal, ceil, copy, flipud, float64, linspace,
+                   maximum, mean, ones, r_, random, round, sqrt, sum)
 from matplotlib.pyplot import (cla, figure, gca, gcf, Normalize, plot, show,
                                subplots, subplot, xlabel, ylabel)
 from matplotlib import animation, rc
@@ -15,7 +15,7 @@ from scipy.special import ellipe
 class ParSim(object):
 
     def __init__(self, applyNoise=False, alpha=1, bc='NEU', beta=2,
-                 dA=0.28, dP=0.15, dt=0.05, grid_size=100, kAP=0.19, kPA=2,
+                 dA=0.28, dP=0.15, dt=0.01, grid_size=100, kAP=0.19, kPA=2,
                  koffA=0.0054, koffP=0.0073, konA=0.00858, konP=0.0474, Ptot=1,
                  ratio=1.56, save_nth=200, ss_prec=0.0001, StoV=0.174,
                  sys_size=134.6/2, T=60000):
@@ -154,6 +154,47 @@ class ParSim(object):
                    dpi=500)
 
     def simulate(self):
+
+        # Adaptive step size parameters
+        atol = 0.0001
+        rtol = 0.0001
+        # 5TH ORDER RK COEFFICIENTS for Dormand-Prince
+        a21 = 1/5
+        a31 = 3/40
+        a32 = 9/40
+        a41 = 44/45
+        a42 = -56/15
+        a43 = 32/9
+        a51 = 19372/6561
+        a52 = -25360/2187
+        a53 = 64448/6561
+        a54 = -212/729
+        a61 = 9017/3168
+        a62 = -355/33
+        a63 = 46732/5247
+        a64 = 49/176
+        a65 = -5103/18656
+
+        b1 = 35/384
+        b2 = 0
+        b3 = 500/1113
+        b4 = 125/192
+        b5 = -2187/6784
+        b6 = 11/84
+
+        bs1 = 5179/57600
+        bs2 = 0
+        bs3 = 7571/16695
+        bs4 = 393/640
+        bs5 = -92097/339200
+        bs6 = 187/2100
+            
+        c2 = 1/5
+        c3 = 3/10
+        c4 = 4/5
+        c5 = 8/9
+        c6 = 1
+
         def check_steady_state():
             # Save every save_nth frame, check whether steady state reached
             if (i is not 0) and (i % self.save_nth) == 0:
@@ -195,48 +236,98 @@ class ParSim(object):
             An = copy(self.A[:, 0])
             Pn = copy(self.P[:, 0])
             for i in range(self.n-1):
-                deltaA = laplacianPER(An, self.dx)
-                deltaP = laplacianPER(Pn, self.dx)
+                delA = laplacianPER(An, self.dx)
+                delP = laplacianPER(Pn, self.dx)
                 Acy = self.Atot - self.StoV*sum(An)/self.grid_size
                 Pcy = self.Ptot - self.StoV*sum(Pn)/self.grid_size
-                An = An+self.dt*(self.dA*deltaA - self.koffA*An +
+                An = An+self.dt*(self.dA*delA - self.koffA*An +
                                  self.konA*Acy - self.kAP*An*Pn**self.alpha)
-                Pn = Pn+self.dt*(self.dP*deltaP - self.koffP*Pn +
+                Pn = Pn+self.dt*(self.dP*delP - self.koffP*Pn +
                                  self.konP*Pcy - self.kPA*An**self.beta*Pn)
                 if check_steady_state() is True:
                     break
 
         elif self.bc == 'NEU':
-            self.set_init_profile()
-            An = copy(self.A[:, 0])
-            Pn = copy(self.P[:, 0])
-            for i in range(self.n-1):
-                deltaA = laplacianNEU(An, self.dx)
-                deltaP = laplacianNEU(Pn, self.dx)
+            def neu(del_t, An, Pn):
+                delA = laplacianNEU(An, self.dx)
+                delP = laplacianNEU(Pn, self.dx)
                 Acy = self.Atot - self.StoV*sum(flipud(An), 0)/self.grid_size
                 Pcy = self.Ptot - self.StoV*sum(Pn, 0)/self.grid_size
                 # Defining Ra and Rp separately is necessary in order to not
                 # update An before Pn (which would then have an effect on Pn
                 # in the same iteration, making the system asymmetric)
-                Rp = self.dt*(self.dP*deltaP-self.koffP*Pn[1:-1]+self.konP*Pcy -
-                              self.kPA*An[1:-1]**self.beta*Pn[1:-1])
-                Ra = self.dt*(self.dA*deltaA-self.koffA*An[1:-1]+self.konA*Acy -
-                              self.kAP*Pn[1:-1]**self.alpha*An[1:-1])
+                Rp = del_t*(self.dP*delP-self.koffP*Pn[1:-1]+self.konP*Pcy -
+                            self.kPA*An[1:-1]**self.beta*Pn[1:-1])
+                # print(sum(Rp))
+                Ra = del_t*(self.dA*delA-self.koffA*An[1:-1]+self.konA*Acy -
+                            self.kAP*Pn[1:-1]**self.alpha*An[1:-1])
+                # print(sum(delA))
+                # print(sum(delP))
+                # print(Pcy)
+                # print(Acy)
+                # print(sum(Rp))
+                # print(sum(Ra))
                 # Hill function instead of mass action for antagonism
                 # if i==1000:
-                    # Tracer()()
-                # Rp = self.dt*(self.dP*deltaP-self.koffP*Pn[1:-1]+self.konP*Pcy -
+                # Rp = self.dt*(self.dP*delP-self.koffP*Pn[1:-1]+self.konP*Pcy -
                 #               self.kPA*An[1:-1]**self.beta*Pn[1:-1]/(0.1**self.beta+An[1:-1]**self.beta))
-                # Ra = self.dt*(self.dA*deltaA-self.koffA*An[1:-1]+self.konA*Acy -
+                # Ra = self.dt*(self.dA*delA-self.koffA*An[1:-1]+self.konA*Acy -
                 #               self.kAP*Pn[1:-1]**self.alpha*An[1:-1]/(0.1**self.alpha+Pn[1:-1]**self.alpha))
-                Pn[1:-1] = Pn[1:-1] + Rp
-                An[1:-1] = An[1:-1] + Ra
+                # Pn[1:-1] = Pn[1:-1] + Rp
+                # An[1:-1] = An[1:-1] + Ra
+                # for Z in (An, Pn):
+                #     Z[0] = Z[1]
+                #     Z[-1] = Z[-2]
+                # return An, Pn                
+                Rp = r_[Rp[0], Rp, Rp[-1]]
+                Ra = r_[Ra[0], Ra, Ra[-1]]
+                return Ra, Rp
 
-                for Z in (An, Pn):
-                    Z[0] = Z[1]
-                    Z[-1] = Z[-2]
-                if check_steady_state() is True:
-                    break
+            self.set_init_profile()
+            An0 = copy(self.A[:, 0])
+            Pn0 = copy(self.P[:, 0])
+            self.t = [0]
+            self.totalerror = [0]
+            for i in range(self.n-1):
+                # Tracer()()
+                An1, Pn1 = neu(self.dt, copy(An0), copy(Pn0))
+                An2, Pn2 = neu(self.dt, An0+a21*An1, Pn0+a21*Pn1)
+                An3, Pn3 = neu(self.dt, An0+a31*An1+a32*An2, Pn0+a31*Pn1+a32*Pn2)
+                An4, Pn4 = neu(self.dt, An0+a41*An1+a42*An2+a43*An3,
+                                        Pn0+a41*Pn1+a42*Pn2+a43*Pn3)
+                An5, Pn5 = neu(self.dt, An0+a51*An1+a52*An2+a53*An3+a54*An4,
+                                        Pn0+a51*Pn1+a52*Pn2+a53*Pn3+a54*Pn4)
+                An6, Pn6 = neu(self.dt, An0+a61*An1+a62*An2+a63*An3+a64*An4+a65*An5,
+                                        Pn0+a61*Pn1+a62*Pn2+a63*Pn3+a64*Pn4+a65*Pn5)
+                # Tracer()()
+                An_new = An0+b1*An1+b2*An2+b3*An3+b4*An4+b5*An5+b6*An6
+                Pn_new = Pn0+b1*Pn1+b2*Pn2+b3*Pn3+b4*Pn4+b5*Pn5+b6*Pn6
+
+                deltaPnerr = max((b1-bs1)*Pn1+(b2-bs2)*Pn2+(b3-bs3)*Pn3 +
+                                 (b4-bs4)*Pn4+(b5-bs5)*Pn5+(b6-bs6)*Pn6)
+                deltaAnerr = max((b1-bs1)*An1+(b2-bs2)*An2+(b3-bs3)*An3 +
+                                 (b4-bs4)*An4+(b5-bs5)*An5+(b6-bs6)*An6)
+                yAn = maximum(max(An_new), max(An0))
+                yPn = maximum(max(Pn_new), max(Pn0))
+                # Tracer()()
+
+                scaleAn = atol+yAn*rtol
+                scalePn = atol+yPn*rtol
+
+                totalerror = sqrt(1/2*((deltaAnerr/scaleAn)**2 +
+                                  (deltaPnerr/scalePn)**2))
+
+                self.dt = self.dt*abs(1/totalerror)**(1/5)
+                if totalerror < 1:
+                    self.t.append(self.t[-1]+self.dt)
+                    An0 = copy(An_new)
+                    Pn0 = copy(Pn_new)
+                    self.totalerror.append(totalerror)
+
+                # if check_steady_state() is True:
+                #     break
+            self.A = An_new
+            self.P = Pn_new
         if self.ssIteration == -1:
             print('Steady state not reached within ' + str(self.ssIteration) +
                   ' iterations.')

@@ -156,8 +156,8 @@ class ParSim(object):
     def simulate(self):
 
         # Adaptive step size parameters
-        atol = 0.0001
-        rtol = 0.0001
+        atol = 0.000001
+        rtol = 0.000001
         # 5TH ORDER RK COEFFICIENTS for Dormand-Prince
         a21 = 1/5
         a31 = 3/40
@@ -174,6 +174,12 @@ class ParSim(object):
         a63 = 46732/5247
         a64 = 49/176
         a65 = -5103/18656
+        a71 = 35/384
+        a72 = 0
+        a73 = 500/1113
+        a74 = 125/192
+        a75 = -2187/6784
+        a76 = 11/84
 
         b1 = 35/384
         b2 = 0
@@ -181,6 +187,7 @@ class ParSim(object):
         b4 = 125/192
         b5 = -2187/6784
         b6 = 11/84
+        b7 = 0
 
         bs1 = 5179/57600
         bs2 = 0
@@ -188,12 +195,14 @@ class ParSim(object):
         bs4 = 393/640
         bs5 = -92097/339200
         bs6 = 187/2100
-            
+        bs7 = 1/40
+
         c2 = 1/5
         c3 = 3/10
         c4 = 4/5
         c5 = 8/9
         c6 = 1
+        c7 = 1
 
         def check_steady_state():
             # Save every save_nth frame, check whether steady state reached
@@ -248,7 +257,7 @@ class ParSim(object):
                     break
 
         elif self.bc == 'NEU':
-            def neu(del_t, An, Pn):
+            def neu(An, Pn):
                 delA = laplacianNEU(An, self.dx)
                 delP = laplacianNEU(Pn, self.dx)
                 Acy = self.Atot - self.StoV*sum(flipud(An), 0)/self.grid_size
@@ -256,76 +265,75 @@ class ParSim(object):
                 # Defining Ra and Rp separately is necessary in order to not
                 # update An before Pn (which would then have an effect on Pn
                 # in the same iteration, making the system asymmetric)
-                Rp = del_t*(self.dP*delP-self.koffP*Pn[1:-1]+self.konP*Pcy -
-                            self.kPA*An[1:-1]**self.beta*Pn[1:-1])
+                Rp = self.dt*(self.dP*delP-self.koffP*Pn[1:-1]+self.konP*Pcy -
+                              self.kPA*An[1:-1]**self.beta*Pn[1:-1])
                 # print(sum(Rp))
-                Ra = del_t*(self.dA*delA-self.koffA*An[1:-1]+self.konA*Acy -
-                            self.kAP*Pn[1:-1]**self.alpha*An[1:-1])
-                # print(sum(delA))
-                # print(sum(delP))
-                # print(Pcy)
-                # print(Acy)
-                # print(sum(Rp))
-                # print(sum(Ra))
-                # Hill function instead of mass action for antagonism
-                # if i==1000:
-                # Rp = self.dt*(self.dP*delP-self.koffP*Pn[1:-1]+self.konP*Pcy -
-                #               self.kPA*An[1:-1]**self.beta*Pn[1:-1]/(0.1**self.beta+An[1:-1]**self.beta))
-                # Ra = self.dt*(self.dA*delA-self.koffA*An[1:-1]+self.konA*Acy -
-                #               self.kAP*Pn[1:-1]**self.alpha*An[1:-1]/(0.1**self.alpha+Pn[1:-1]**self.alpha))
-                # Pn[1:-1] = Pn[1:-1] + Rp
-                # An[1:-1] = An[1:-1] + Ra
-                # for Z in (An, Pn):
-                #     Z[0] = Z[1]
-                #     Z[-1] = Z[-2]
-                # return An, Pn                
-                Rp = r_[Rp[0], Rp, Rp[-1]]
-                Ra = r_[Ra[0], Ra, Ra[-1]]
-                return Ra, Rp
+                Ra = self.dt*(self.dA*delA-self.koffA*An[1:-1]+self.konA*Acy -
+                              self.kAP*Pn[1:-1]**self.alpha*An[1:-1])
+                # Return arrays with first and last two elements equal
+                # respecitvely, to impose zero derivatives
+                return r_[Ra[0], Ra, Ra[-1]], r_[Rp[0], Rp, Rp[-1]]
 
             self.set_init_profile()
-            An0 = copy(self.A[:, 0])
-            Pn0 = copy(self.P[:, 0])
+            A0 = self.A[:, 0]
+            P0 = self.P[:, 0]
             self.t = [0]
             self.totalerror = [0]
-            for i in range(self.n-1):
-                # Tracer()()
-                An1, Pn1 = neu(self.dt, copy(An0), copy(Pn0))
-                An2, Pn2 = neu(self.dt, An0+a21*An1, Pn0+a21*Pn1)
-                An3, Pn3 = neu(self.dt, An0+a31*An1+a32*An2, Pn0+a31*Pn1+a32*Pn2)
-                An4, Pn4 = neu(self.dt, An0+a41*An1+a42*An2+a43*An3,
-                                        Pn0+a41*Pn1+a42*Pn2+a43*Pn3)
-                An5, Pn5 = neu(self.dt, An0+a51*An1+a52*An2+a53*An3+a54*An4,
-                                        Pn0+a51*Pn1+a52*Pn2+a53*Pn3+a54*Pn4)
-                An6, Pn6 = neu(self.dt, An0+a61*An1+a62*An2+a63*An3+a64*An4+a65*An5,
-                                        Pn0+a61*Pn1+a62*Pn2+a63*Pn3+a64*Pn4+a65*Pn5)
-                # Tracer()()
-                An_new = An0+b1*An1+b2*An2+b3*An3+b4*An4+b5*An5+b6*An6
-                Pn_new = Pn0+b1*Pn1+b2*Pn2+b3*Pn3+b4*Pn4+b5*Pn5+b6*Pn6
+            self.errRatio = []
 
-                deltaPnerr = max((b1-bs1)*Pn1+(b2-bs2)*Pn2+(b3-bs3)*Pn3 +
-                                 (b4-bs4)*Pn4+(b5-bs5)*Pn5+(b6-bs6)*Pn6)
-                deltaAnerr = max((b1-bs1)*An1+(b2-bs2)*An2+(b3-bs3)*An3 +
-                                 (b4-bs4)*An4+(b5-bs5)*An5+(b6-bs6)*An6)
-                yAn = maximum(max(An_new), max(An0))
-                yPn = maximum(max(Pn_new), max(Pn0))
-                # Tracer()()
-
+            while self.t[-1] < self.T:
+                # Calculate increments for RK45
+                A1, P1 = neu(A0, P0)
+                A2, P2 = neu(A0+a21*A1, P0+a21*P1)
+                A3, P3 = neu(A0+a31*A1+a32*A2, P0+a31*P1+a32*P2)
+                A4, P4 = neu(A0+a41*A1+a42*A2+a43*A3, P0+a41*P1+a42*P2+a43*P3)
+                A5, P5 = neu(A0+a51*A1+a52*A2+a53*A3+a54*A4,
+                             P0+a51*P1+a52*P2+a53*P3+a54*P4)
+                A6, P6 = neu(A0+a61*A1+a62*A2+a63*A3+a64*A4+a65*A5,
+                             P0+a61*P1+a62*P2+a63*P3+a64*P4+a65*P5)
+                A7, P7 = neu(A0+a71*A1+a73*A3+a74*A4+a75*A5+a76*A6,  # a72=0
+                             P0+a71*P1+a73*P3+a74*P4+a75*P5+a76*P6)
+                # Update concentrations using A1-A6 and P1-P6, coefficient for
+                # A7 and P7 is 0.
+                An_new = A0+b1*A1+b3*A3+b4*A4+b5*A5+b6*A6  # b2/7=0 => no A2/7
+                Pn_new = P0+b1*P1+b3*P3+b4*P4+b5*P5+b6*P6  # b2/7=0 => no P2/7
+                # Compute difference between fourth and fifth order
+                deltaAnerr = max(abs((b1-bs1)*A1+(b3-bs3)*A3+(b4-bs4)*A4 +
+                                 (b5-bs5)*A5+(b6-bs6)*A6-bs7*A7))  # b7 is zero
+                deltaPnerr = max(abs((b1-bs1)*P1+(b3-bs3)*P3+(b4-bs4)*P4 +
+                                 (b5-bs5)*P5+(b6-bs6)*P6-bs7*P7))  # b7 is zero
+                # Get maximum concentrations for An and Pn
+                yAn = maximum(max(abs(An_new)), max(abs(A0)))
+                yPn = maximum(max(abs(Pn_new)), max(abs(P0)))
+                # Get error scale, combining relative and absolute error
                 scaleAn = atol+yAn*rtol
                 scalePn = atol+yPn*rtol
-
+                # Compute total error as norm of maximum errors for each
+                # species scaled by the error scale
                 totalerror = sqrt(1/2*((deltaAnerr/scaleAn)**2 +
                                   (deltaPnerr/scalePn)**2))
-
-                self.dt = self.dt*abs(1/totalerror)**(1/5)
+                # Compute new timestep
+                dtnew = 0.99*self.dt*abs(1/totalerror)**(1/5)
+                # Upper and lower bound for timestep to avoid changing too fast
+                if dtnew > 5*self.dt:
+                    dtnew = 5*self.dt
+                elif dtnew < self.dt/5:
+                    dtnew = self.dt/5
+                # Set timestep for next round
+                self.dt = dtnew
+                # Accept step if error is on the order of error scale or below
                 if totalerror < 1:
                     self.t.append(self.t[-1]+self.dt)
-                    An0 = copy(An_new)
-                    Pn0 = copy(Pn_new)
+                    self.errRatio.append(max(A0/An_new))
                     self.totalerror.append(totalerror)
+                    A0 = An_new
+                    P0 = Pn_new
 
-                # if check_steady_state() is True:
-                #     break
+                # Break if things change by less than 0.1% over
+                # the course of 1 min.
+                if self.errRatio[-1]**(60/dtnew) < 1.001:
+                    break
+
             self.A = An_new
             self.P = Pn_new
         if self.ssIteration == -1:

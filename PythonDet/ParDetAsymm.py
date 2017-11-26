@@ -17,7 +17,7 @@ class ParSim(object):
     def __init__(self, alpha=1, beta=2, dA=0.28, dP=0.15, dt=0.01,
                  grid_size=100, kAP=0.19, kPA=2, koffA=0.0054, koffP=0.0073,
                  konA=0.00858, konP=0.0474, Ptot=1, ratio=1.56, ss_prec=1.001,
-                 StoV=0.174, sys_size=134.6/2, T=36000, store_interval=10):
+                 StoV=0.174, sys_size=134.6/2, T=100000, store_interval=10):
 
         self.dt = dt  # time step
         self.grid_size = grid_size  # length of grid
@@ -26,6 +26,7 @@ class ParSim(object):
         self.T = T  # wall time
         self.dx = sys_size/self.grid_size  # space step
         self.n = int(self.T/self.dt)
+        self.finished_in_time = 0
 
         self.alpha = alpha
         self.beta = beta
@@ -40,13 +41,14 @@ class ParSim(object):
         self.Ptot = Ptot
         self.ratio = ratio
         self.StoV = StoV
+        self.sys_size = sys_size
 
         self.Atot = self.ratio * Ptot
 
     def plot_steady_state(self):
         x = linspace(0, self.grid_size*self.dx, self.grid_size)
-        plot(x, self.A[:, -1])
-        plot(x, self.P[:, -1])
+        plot(x, self.A[:, -1], 'red')
+        plot(x, self.P[:, -1], 'dodgerblue')
         if self.t[-1] >= self.T:
             print('Steady state not reached, plotting last time point.')
         # show()
@@ -57,8 +59,8 @@ class ParSim(object):
         self.A[int(round(self.grid_size/2)):, 0] = 0
         self.P[0:int(round(self.grid_size/2)), 0] = 0
 
-    def save_movie(self, fname=None, dpi=200):
-        size_factor = 134.6/2/(self.grid_size*self.dx)
+    def save_movie(self, fname=None, dpi=200, everynth=10):
+        size_factor = self.sys_size/(self.grid_size*self.dx)
         fig = figure(figsize=(5, 4.0), facecolor='black')
         ax = gca()
         ax.set_xlim((0, self.grid_size*self.dx))
@@ -96,7 +98,7 @@ class ParSim(object):
         # call the animator
         i_e = self.A.shape[1]
         a = animation.FuncAnimation(fig, animate, init_func=init,
-                                    frames=range(0, i_e),
+                                    frames=range(0, i_e, everynth),
                                     interval=100, blit=False)
         if fname is None:
             a.save('lines.mp4', savefig_kwargs={'facecolor': 'black'}, dpi=dpi)
@@ -118,10 +120,10 @@ class ParSim(object):
             # Defining Ra and Rp separately is necessary in order to not
             # update An before Pn (which would then have an effect on Pn
             # in the same iteration, making the system asymmetric)
-            Ra = self.dt*(self.dA*delA-self.koffA*An[1:-1]+self.konA*Acy -
-                          self.kAP*Pn[1:-1]**self.alpha*An[1:-1])
-            Rp = self.dt*(self.dP*delP-self.koffP*Pn[1:-1]+self.konP*Pcy -
-                          self.kPA*An[1:-1]**self.beta*Pn[1:-1])
+            Ra = (self.dA*delA-self.koffA*An[1:-1]+self.konA*Acy -
+                  self.kAP*Pn[1:-1]**self.alpha*An[1:-1])
+            Rp = (self.dP*delP-self.koffP*Pn[1:-1]+self.konP*Pcy -
+                  self.kPA*An[1:-1]**self.beta*Pn[1:-1])
             # Return arrays with first and last two elements equal
             # respecitvely, to impose zero derivatives
             return r_[Ra[0], Ra, Ra[-1]], r_[Rp[0], Rp, Rp[-1]]
@@ -160,40 +162,25 @@ class ParSim(object):
         self.no_reject = 0
         while self.t[-1] < self.T:
             # Calculate increments for RK45
-            # Tracer()()
-            A1, P1 = neu(A0, P0)
-            A2, P2 = neu(A0+a21*A1, P0+a21*P1)
-            A3, P3 = neu(A0+a31*A1+a32*A2, P0+a31*P1+a32*P2)
-            A4, P4 = neu(A0+a41*A1+a42*A2+a43*A3, P0+a41*P1+a42*P2+a43*P3)
-            A5, P5 = neu(A0+a51*A1+a52*A2+a53*A3+a54*A4,
-                         P0+a51*P1+a52*P2+a53*P3+a54*P4)
-            A6, P6 = neu(A0+a61*A1+a62*A2+a63*A3+a64*A4+a65*A5,
-                         P0+a61*P1+a62*P2+a63*P3+a64*P4+a65*P5)
-            A7, P7 = neu(A0+a71*A1+a73*A3+a74*A4+a75*A5+a76*A6,  # a72=0
-                         P0+a71*P1+a73*P3+a74*P4+a75*P5+a76*P6)  # a72=0
+            if (self.t[-1] == 0) or not (Pn_new == P0[1]).any():
+                A1, P1 = neu(A0, P0)
+            else:
+                A1, P1 = A7, P7
+            A2, P2 = neu(A0+self.dt*(a21*A1), P0+self.dt*(a21*P1))
+            A3, P3 = neu(A0+self.dt*(a31*A1+a32*A2),
+                         P0+self.dt*(a31*P1+a32*P2))
+            A4, P4 = neu(A0+self.dt*(a41*A1+a42*A2+a43*A3),
+                         P0+self.dt*(a41*P1+a42*P2+a43*P3))
+            A5, P5 = neu(A0+self.dt*(a51*A1+a52*A2+a53*A3+a54*A4),
+                         P0+self.dt*(a51*P1+a52*P2+a53*P3+a54*P4))
+            A6, P6 = neu(A0+self.dt*(a61*A1+a62*A2+a63*A3+a64*A4+a65*A5),
+                         P0+self.dt*(a61*P1+a62*P2+a63*P3+a64*P4+a65*P5))
+            A7, P7 = neu(A0+self.dt*(a71*A1+a73*A3+a74*A4+a75*A5+a76*A6),
+                         P0+self.dt*(a71*P1+a73*P3+a74*P4+a75*P5+a76*P6))
             # Update concentrations using A1-A6 and P1-P6, coefficient for
             # A7 and P7 is 0.
-            An_new = A0+b1*A1+b3*A3+b4*A4+b5*A5+b6*A6  # b2/7=0 => no A2/7
-            Pn_new = P0+b1*P1+b3*P3+b4*P4+b5*P5+b6*P6  # b2/7=0 => no P2/7
-
-            # if (self.t[-1] == 0) or not (Pn_new == P0[1]).any():
-            #     A1, P1 = neu(A0, P0)
-            # else:
-            #     A1, P1 = A7, P7
-            # A2, P2 = neu(A0+a21*A1, P0+a21*P1)
-            # A3, P3 = neu(A0+a31*A1+a32*A2, P0+a31*P1+a32*P2)
-            # A4, P4 = neu(A0+a41*A1+a42*A2+a43*A3, P0+a41*P1+a42*P2+a43*P3)
-            # A5, P5 = neu(A0+a51*A1+a52*A2+a53*A3+a54*A4,
-            #              P0+a51*P1+a52*P2+a53*P3+a54*P4)
-            # A6, P6 = neu(A0+a61*A1+a62*A2+a63*A3+a64*A4+a65*A5,
-            #              P0+a61*P1+a62*P2+a63*P3+a64*P4+a65*P5)
-            # # Update concentrations using A1-A6 and P1-P6, coefficient for
-            # # A7 and P7 is 0.
-            # A7, P7 = neu(A0+a71*A1+a73*A3+a74*A4+a75*A5+a76*A6,  # a72=0
-            #              P0+a71*P1+a73*P3+a74*P4+a75*P5+a76*P6)  # a72=0
-            # An_new = A0+b1*A1+b3*A3+b4*A4+b5*A5+b6*A6  # b2/7=0 => no A2/7
-            # Pn_new = P0+b1*P1+b3*P3+b4*P4+b5*P5+b6*P6  # b2/7=0 => no P2/7
-
+            An_new = A0+self.dt*(b1*A1+b3*A3+b4*A4+b5*A5+b6*A6)  # b2/7=0
+            Pn_new = P0+self.dt*(b1*P1+b3*P3+b4*P4+b5*P5+b6*P6)  # b2/7=0
 
             # Compute difference between fourth and fifth order
             deltaAnerr = max(abs((b1-bs1)*A1+(b3-bs3)*A3+(b4-bs4)*A4 +
@@ -235,9 +222,12 @@ class ParSim(object):
                 if ((max(An_new)/min(An_new) < 1.01) and
                    (max(Pn_new)/min(Pn_new) < 1.01)):
                     print('Unpolarized, not necessarily close to SS!')
+                    self.finished_in_time = 1
                     break
-                elif max(abs(A0/An_new))**(60/dtnew) < self.ss_prec:
+                elif (max(max(abs(A0/An_new))**(60/dtnew),
+                          max(abs(P0/Pn_new))**(60/dtnew))) < self.ss_prec:
                     print('Steady state reached.')
+                    self.finished_in_time = 1
                     break
                 A0 = An_new
                 P0 = Pn_new
@@ -268,12 +258,14 @@ class Sim_Container:
                 self.simList.append(ParSim(alpha=2, beta=2, dA=0.15, dP=0.15,
                                            dt=0.05, kAP=1, kPA=1, koffA=0.005,
                                            koffP=0.005, konA=0.006, konP=0.006,
-                                           ratio=1.01, grid_size=100, sys_size=k))
+                                           ratio=1.01, grid_size=100,
+                                           sys_size=k))
             elif self.sys == 'asymmetric':
-                self.simList.append(ParSim(alpha=2, beta=2, dA=k, dP=0.35,
+                self.simList.append(ParSim(alpha=2, beta=2, dA=0.8, dP=0.9,
                                            dt=0.01, kAP=1, kPA=1, koffA=0.005,
                                            koffP=0.005, konA=0.006, konP=0.006,
-                                           ratio=1.00, grid_size=100, sys_size=40.0))
+                                           ratio=1.00, grid_size=100,
+                                           sys_size=63.7))
             elif self.sys == 'PARsys':
                 self.simList.append(ParSim())
 
@@ -292,7 +284,9 @@ class Sim_Container:
     def plot_all_ss(self):
         for i in self.simus:
             i.plot_steady_state()
-        show()
+            print(i.dA)
+            print(i.dP)
+            show()
 
     def run_simus(self):
 

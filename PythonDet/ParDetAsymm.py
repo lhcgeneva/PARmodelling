@@ -14,36 +14,54 @@ from scipy.special import ellipe
 
 class ParSim(object):
 
-    def __init__(self, alpha=1, beta=2, dA=0.28, dP=0.15, dt=0.01,
-                 grid_size=100, kAP=0.19, kPA=2, koffA=0.0054, koffP=0.0073,
-                 konA=0.00858, konP=0.0474, Ptot=1, ratio=1.56, ss_prec=1.001,
-                 StoV=0.174, sys_size=134.6/2, T=100000, store_interval=10):
+    def __init__(self, bc='NEU', dt=0.01, grid_size=100, param_dict=None, ss_prec=1.001,
+                 T=100000, store_interval=10):
 
+        if param_dict is None:
+            param_dict = {'alpha': 1, 'beta': 2, 'dA': 0.28, 'dP': 0.15,
+                          'kAP': 0.19, 'kPA': 2, 'koffA': 0.0054,
+                          'koffP': 0.0073, 'konA': 0.00858, 'konP': 0.0474,
+                          'Ptot': 1, 'ratio': 1.56, 'sys_size': 134.6/2}
         self.dt = dt  # time step
         self.grid_size = grid_size  # length of grid
         self.ss_prec = ss_prec
         self.store_interval = store_interval
         self.T = T  # wall time
-        self.dx = sys_size/self.grid_size  # space step
+        self.dx = param_dict['sys_size']/self.grid_size  # space step
         self.n = int(self.T/self.dt)
         self.finished_in_time = 0
 
-        self.alpha = alpha
-        self.beta = beta
-        self.dA = dA
-        self.dP = dP
-        self.kAP = kAP
-        self.kPA = kPA
-        self.konA = konA
-        self.konP = konP
-        self.koffA = koffA
-        self.koffP = koffP
-        self.Ptot = Ptot
-        self.ratio = ratio
-        self.StoV = StoV
-        self.sys_size = sys_size
+        self.alpha = param_dict['alpha']
+        self.beta = param_dict['beta']
+        self.dA = param_dict['dA']
+        self.dP = param_dict['dP']
+        self.kAP = param_dict['kAP']
+        self.kPA = param_dict['kPA']
+        self.konA = param_dict['konA']
+        self.konP = param_dict['konP']
+        self.koffA = param_dict['koffA']
+        self.koffP = param_dict['koffP']
+        self.Ptot = param_dict['Ptot']
+        self.ratio = param_dict['ratio']
+        self.sys_size = param_dict['sys_size']
+        if bc is 'NEU':
+            # Mutliply by two, because s_to_v takes the entire circumference,
+            # not half of it.
+            self.StoV = s_to_v('Circumference', [self.sys_size*2, 15/27])
 
-        self.Atot = self.ratio * Ptot
+        self.Atot = self.ratio * self.Ptot
+
+    def pickle_data(self, fname):
+        '''
+        Pickle data to store on disk.
+
+        path     save pickled object elsewhere other than in the directory
+                 containing the imaging data.
+        postfix  add a postfix to the filename
+        '''
+        with open(fname + '.pickle', 'wb') as f:
+            # Pickle self using the highest protocol available.
+            dump(self, f, HIGHEST_PROTOCOL)
 
     def plot_steady_state(self):
         x = linspace(0, self.grid_size*self.dx, self.grid_size)
@@ -218,16 +236,17 @@ class ParSim(object):
                     i = i + 1
                     tnext = tnext + self.store_interval
                 # Break if things change by less than 0.1% over
-                # the course of 1 min.
-                if ((max(An_new)/min(An_new) < 1.01) and
-                   (max(Pn_new)/min(Pn_new) < 1.01)):
+                # the course of 1 min or maximum difference between
+                # concentration of a species is less than 5%.
+                if ((max(An_new)/min(An_new) < 1.05) and
+                   (max(Pn_new)/min(Pn_new) < 1.05)):
                     print('Unpolarized, not necessarily close to SS!')
                     self.finished_in_time = 1
                     break
                 elif (max(max(abs(A0/An_new))**(60/dtnew),
                           max(abs(P0/Pn_new))**(60/dtnew))) < self.ss_prec:
                     print('Steady state reached.')
-                    self.finished_in_time = 1
+                    self.finished_in_time = 2
                     break
                 A0 = An_new
                 P0 = Pn_new
@@ -245,31 +264,16 @@ class ParSim(object):
 
 class Sim_Container:
 
-    def __init__(self, param_dict, no_workers=8, sys='symmetric'):
-        self.param_dict = param_dict
-        # self.r = r
+    def __init__(self, dicts='None', no_workers=8):
+        self.dicts = dicts
         self.no_workers = no_workers
-        self.sys = sys
 
     def init_simus(self):
         self.simList = []
-        for k in self.param_dict['S']:
-            if self.sys == 'symmetric':
-                self.simList.append(ParSim(alpha=2, beta=2, dA=0.15, dP=0.15,
-                                           dt=0.05, kAP=1, kPA=1, koffA=0.005,
-                                           koffP=0.005, konA=0.006, konP=0.006,
-                                           ratio=1.01, grid_size=100,
-                                           sys_size=k))
-            elif self.sys == 'asymmetric':
-                self.simList.append(ParSim(alpha=2, beta=2, dA=0.8, dP=0.9,
-                                           dt=0.01, kAP=1, kPA=1, koffA=0.005,
-                                           koffP=0.005, konA=0.006, konP=0.006,
-                                           ratio=1.00, grid_size=100,
-                                           sys_size=63.7))
-            elif self.sys == 'PARsys':
-                self.simList.append(ParSim())
+        for dic in self.dicts:
+            self.simList.append(ParSim(param_dict=dic))
 
-    def pickle_data(self, fname, postfix=''):
+    def pickle_data(self, fname):
         '''
         Pickle data to store on disk.
 

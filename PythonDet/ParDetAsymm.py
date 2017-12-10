@@ -72,8 +72,8 @@ class ParSim(object):
         show()
 
     def set_init_profile(self):
-        self.A = ones((self.grid_size, 20*int(self.T/self.store_interval)))*1.0
-        self.P = ones((self.grid_size, 20*int(self.T/self.store_interval)))*1.0
+        self.A = ones((self.grid_size, int(1.2*self.T/self.store_interval)))*1.0
+        self.P = ones((self.grid_size, int(1.2*self.T/self.store_interval)))*1.0
         self.A[int(round(self.grid_size/2)):, 0] = 0
         self.P[0:int(round(self.grid_size/2)), 0] = 0
 
@@ -262,8 +262,10 @@ class ParSim(object):
         # Cut A and P to not include any zeros from preallocation
         self.A = self.A[:, ~all(self.A == 1, axis=0)]
         self.P = self.P[:, ~all(self.P == 1, axis=0)]
-        if ((self.A[0, -1] < self.P[0, -1]) or
-           (self.P[-1, -1] < self.A[-1, -1])):
+
+        if (self.A[0, -1] < self.P[0, -1]):
+            self.finished_in_time = 0
+        elif (self.P[-1, -1] < self.A[-1, -1]):
             self.finished_in_time = 1
         else:
             self.finished_in_time = 2

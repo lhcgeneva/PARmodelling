@@ -15,7 +15,7 @@ from scipy.special import ellipe
 class ParSim(object):
 
     def __init__(self, bc='NEU', dt=0.01, grid_size=100, param_dict=None, ss_prec=1.001,
-                 T=100000, store_interval=10):
+                 T=6000, store_interval=10):
 
         if param_dict is None:
             param_dict = {'alpha': 1, 'beta': 2, 'dA': 0.28, 'dP': 0.15,
@@ -69,11 +69,11 @@ class ParSim(object):
         plot(x, self.P[:, -1], 'dodgerblue')
         if self.t[-1] >= self.T:
             print('Steady state not reached, plotting last time point.')
-        # show()
+        show()
 
     def set_init_profile(self):
-        self.A = ones((self.grid_size, int(self.T/self.store_interval)))*1.0
-        self.P = ones((self.grid_size, int(self.T/self.store_interval)))*1.0
+        self.A = ones((self.grid_size, 20*int(self.T/self.store_interval)))*1.0
+        self.P = ones((self.grid_size, 20*int(self.T/self.store_interval)))*1.0
         self.A[int(round(self.grid_size/2)):, 0] = 0
         self.P[0:int(round(self.grid_size/2)), 0] = 0
 
@@ -238,28 +238,35 @@ class ParSim(object):
                 # Break if things change by less than 0.1% over
                 # the course of 1 min or maximum difference between
                 # concentration of a species is less than 5%.
-                if ((max(An_new)/min(An_new) < 1.05) and
-                   (max(Pn_new)/min(Pn_new) < 1.05)):
-                    print('Unpolarized, not necessarily close to SS!')
-                    self.finished_in_time = 1
-                    break
-                elif (max(max(abs(A0/An_new))**(60/dtnew),
-                          max(abs(P0/Pn_new))**(60/dtnew))) < self.ss_prec:
-                    print('Steady state reached.')
-                    self.finished_in_time = 2
-                    break
+                # if ((max(An_new)/min(An_new) < 1.05) and
+                #    (max(Pn_new)/min(Pn_new) < 1.05)):
+                #     print('Unpolarized, not necessarily close to SS!')
+                #     self.finished_in_time = 1
+                #     break
+                # elif (max(max(abs(A0/An_new))**(60/dtnew),
+                #           max(abs(P0/Pn_new))**(60/dtnew))) < self.ss_prec:
+                #     print('Steady state reached.')
+                #     self.finished_in_time = 2
+                #     break
                 A0 = An_new
                 P0 = Pn_new
                 self.no_reject += 1
             else:
                 self.reject += 1
 
+            if (An_new[0] < Pn_new[0]) or (Pn_new[-1] < An_new[-1]):
+                break
         self.A[:, i] = An_new
         self.P[:, i] = Pn_new
         self.t_stored.append(self.t[-1])
         # Cut A and P to not include any zeros from preallocation
         self.A = self.A[:, ~all(self.A == 1, axis=0)]
         self.P = self.P[:, ~all(self.P == 1, axis=0)]
+        if ((self.A[0, -1] < self.P[0, -1]) or
+           (self.P[-1, -1] < self.A[-1, -1])):
+            self.finished_in_time = 1
+        else:
+            self.finished_in_time = 2
 
 
 class Sim_Container:
@@ -288,8 +295,6 @@ class Sim_Container:
     def plot_all_ss(self):
         for i in self.simus:
             i.plot_steady_state()
-            print(i.dA)
-            print(i.dP)
             show()
 
     def run_simus(self):

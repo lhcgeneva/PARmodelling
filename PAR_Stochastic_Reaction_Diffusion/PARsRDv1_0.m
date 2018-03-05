@@ -38,15 +38,16 @@ if nargin > 3
     p       = params.p; % Percentage of membrane taken by B in beginning
     ratioAB = params.ratioAB;
 else
-    totalT = 10; % Total simulation time
-    bins = 100; % Discretization bins
-    boundPos = 25; % Initial boundary position in bin #
+    totalT = 1000; % Total simulation time
+    bins = 40; % Discretization bins
+    boundPos = 20; % Initial boundary position in bin #
     
     L   = 134.6/2; %P0: L = 134.6/2; % Length of system in um
     psi = 0.174; % S/V ration from Goehring et al (2011).
     J   = 79; 
-    
     Bconc   = 79; % in nM
+    
+    %% asymmetric system
     DA      = 0.28;
     DB      = 0.15;
     alpha   = 1;
@@ -59,6 +60,20 @@ else
     kcB     = 2; % B + beta*A > Bcyto + beta*A
     p       = 0; % Percentage of membrane taken by B in beginning
     ratioAB = 1.56;
+    
+    %% symmetric system
+%     DA      = 0.1;
+%     DB      = 0.1;
+%     alpha   = 2;
+%     beta    = 2;
+%     koffA   = 0.013; % A > cytoA
+%     konA    = 0.0174; % cytoA > A
+%     koffB   = 0.013; % B > cytoB
+%     konB    = 0.0174; % cytoB > B
+%     kcA     = 2; % A + alpha*B > Acyto + alpha*B
+%     kcB     = 2; % B + beta*A > Bcyto + beta*A
+%     p       = 0; % Percentage of membrane taken by B in beginning
+%     ratioAB = 1.0;
 end
 
 % 
@@ -73,7 +88,7 @@ h = L/bins; % Bin length
 w = 1; % Bin width
 Si = h*w; % Area of bin
 totalS = Si * bins; % Total surface area
-totalV = totalS / psi; % Total volume (assuming 
+totalV = totalS / psi; % Total volume
 
 dA = DA/h^2;
 dB = DB/h^2;
@@ -340,11 +355,13 @@ subplot(1,2,2), imagesc(I), axis square;
 xlabel('Position in cell (a.u.)');
 ylabel('Time (in plotInterval * s)');
 
+disp(sum(A(:, end))+cytoA);
+disp(sum(B(:, end))+cytoB);
 Simulation.name = name;
-if nargin > 2
+Simulation.A    = A;
+Simulation.B    = B;
+Simulation.plotTime = plotTime;
+if nargin > 3
     Simulation.params = params;
-    Simulation.A    = A;
-    Simulation.B    = B;
-    Simulation.plotTime = plotTime;
 end
 end

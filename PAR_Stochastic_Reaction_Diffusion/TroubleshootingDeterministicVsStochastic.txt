@@ -1,0 +1,363 @@
+large sizes -> convergence
+high concentrations  via bin -> convergence
+high concentrations  via actual concentrations -> convergence
+
+Small system sizes: deterministic boundary stays pretty constant, slowly drifts left
+                    stochastic boundary drifts right
+                    is system size effect of bin size? nope it's not
+
+Check out diffusion, if size dependence, only D is problem!
+
+If #bin = L/2: 1.56/1.04 gives good results across L/2:4L
+
+are on rates scaled correctly?
+
+Monitor: 
+    total concentrations on membrane and in cytoplasm
+    rates of antagonism/off rates/on rates
+
+    particles on membrane: A*Si*bin*
+
+L/4 wtih Bconc=J=2000: very good agreement
+                 200 still good (same direction) but not as good
+
+ bins: 4, 1, 0.25
+ J: 2000, 500, 100, 50, 20
+ L: 4, 1, 0.25
+
+Lack of steepness mentioned by Nate could be due to averaging!
+ try this for peridic boundary conditions
+ B=J=79 works for periodic boundary conditions for wt size/2, stochastic seems more shallow, but boundaries fit really well
+
+Thing to check before OK: does bin size influence boundary position?
+Dosage can also be changed by simulating a broader strip
+What we should really do: 2D simulation for the whole embryo
+
+shifting by 1 micron makes wt sized curves collapse
+ reflective boundary conditions:
+ -------------------------------
+
+
+  1.8200e+03
+
+   1.8200e+03
+
+   1.8200e+03
+
+   1.1666e+03
+
+   4.5499e+03
+
+   1.1666e+03
+
+   4.5499e+03
+
+   1.1666e+03
+
+   4.5499e+03
+
+   2.9166e+03
+
+   9.0998e+03
+
+   2.9166e+03
+
+   9.0998e+03
+
+   2.9166e+03
+
+   9.0998e+03
+
+   4.5499e+04
+
+   5.8332e+03
+
+   4.5499e+04
+
+   5.8332e+03
+
+   4.5499e+04
+
+   5.8332e+03
+
+   4.5499e+04
+
+   2.9166e+04
+
+   1.8200e+05
+
+   2.9166e+04
+
+   1.8200e+05
+
+   2.9166e+04
+
+   1.8200e+05
+
+   1.1666e+05
+
+   2.9119e+04
+
+   1.1666e+05
+
+   2.9119e+04
+
+   1.1666e+05
+
+   2.9119e+04
+
+   2.9166e+04
+
+   1.8200e+05
+
+   1.1666e+05
+
+   2.9119e+04
+
+   1.8666e+04
+
+   7.2798e+04
+
+   1.8666e+04
+
+   7.2798e+04
+
+   1.8666e+04
+
+   7.2798e+04
+
+   1.8666e+04
+
+   7.2798e+04
+
+   4.6666e+04
+
+   1.4560e+05
+
+   4.6666e+04
+
+   1.4560e+05
+
+   4.6666e+04
+
+   1.4560e+05
+
+   4.6666e+04
+
+   1.4560e+05
+
+   9.3331e+04
+
+   7.2798e+05
+
+   9.3331e+04
+
+   7.2798e+05
+
+   9.3331e+04
+
+   7.2798e+05
+
+   9.3331e+04
+
+   7.2798e+05
+
+   4.6666e+05
+
+   2.9119e+06
+
+   4.6666e+05
+
+   2.9119e+06
+
+   1.8666e+06
+
+   4.6591e+05
+
+   1.8666e+06
+
+   4.6591e+05
+
+   4.6666e+05
+
+   2.9119e+06
+
+   4.6666e+05
+
+   2.9119e+06
+
+   1.8666e+06
+
+   4.6591e+05
+
+   1.8666e+06
+
+   4.6591e+05
+
+   2.9866e+05
+
+   1.1648e+06
+
+   2.9866e+05
+
+   1.1648e+06
+
+   2.9866e+05
+
+   1.1648e+06
+
+   2.9866e+05
+
+   1.1648e+06
+
+   7.4665e+05
+
+   2.3296e+06
+
+   7.4665e+05
+
+   2.3296e+06
+
+   7.4665e+05
+
+   2.3296e+06
+
+   7.4665e+05
+
+   2.3296e+06
+
+   1.4933e+06
+
+   1.1648e+07
+
+   1.4933e+06
+
+   1.1648e+07
+
+   1.4933e+06
+
+   1.1648e+07
+
+   1.4933e+06
+
+   1.1648e+07
+
+   7.4665e+06
+
+   4.6591e+07
+
+   2.9866e+07
+
+   7.4665e+06
+
+   4.6591e+07
+
+   2.9866e+07
+
+   4.5499e+04
+
+   2.9166e+04
+
+   1.8200e+05
+
+   1.1666e+05
+
+   2.9119e+04
+
+   1.8666e+04
+
+   7.2798e+04
+
+   4.6666e+04
+
+   1.4560e+05
+
+   7.4665e+06
+
+   4.6591e+07
+
+   2.9866e+07
+
+   9.3331e+04
+
+   7.2798e+05
+
+   4.6666e+05
+
+   7.4665e+06
+
+   4.6591e+07
+
+   2.9866e+07
+
+   7.2798e+04
+
+   4.6666e+04
+
+   1.4560e+05
+
+   2.9119e+06
+
+   1.8666e+06
+
+   4.6591e+05
+
+   9.3331e+04
+
+   7.2798e+05
+
+   4.6666e+05
+
+   4.5499e+04
+
+   2.9866e+05
+
+   1.1648e+06
+
+   2.9166e+04
+
+   1.8200e+05
+
+   1.1666e+05
+
+   2.9119e+04
+
+   1.8666e+04
+
+   1.8200e+03
+
+   1.1666e+03
+
+   4.5499e+03
+
+   2.9166e+03
+
+   9.0998e+03
+
+   5.8332e+03
+
+   7.4665e+05
+
+   2.3296e+06
+
+   2.9119e+06
+
+   1.8666e+06
+
+   4.6591e+05
+
+   2.9866e+05
+
+   1.1648e+06
+
+   1.1648e+07
+
+   7.4665e+05
+
+   2.3296e+06
+
+   1.4933e+06
+
+   1.4933e+06
+
+   1.1648e+07

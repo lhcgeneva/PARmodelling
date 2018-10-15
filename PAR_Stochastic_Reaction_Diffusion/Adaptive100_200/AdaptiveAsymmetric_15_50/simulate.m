@@ -1,0 +1,6 @@
+%% Simulations with real off rates and Ds
+sizes = 15:5:50;
+s = Simulations({{{'DB', 'DA', 'koffA', 'koffB', 'L', 'psi', 'bins'}, {'ratioAB'}},...
+                {{fDP2(2*sizes), fDP6(2*sizes), fOP2(2*sizes), fOP6(2*sizes),...
+                  sizes,S_to_V('Circumference', {sizes, 15/27}), 2*round(sizes)}, {[1.3, 1.4, 1.5, 1.6, 1.7, 1.8]}}}, 1);
+s.run_simulations();

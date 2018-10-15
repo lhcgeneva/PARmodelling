@@ -1,8 +1,10 @@
+from copy import deepcopy
 from IPython.core.debugger import Tracer
 from IPython.display import HTML
 from itertools import repeat
-from numpy import (abs, all, argmax, array_equal, ceil, copy, flipud, float64,
-                   linspace, maximum, mean, ones, r_, random, round, sqrt, sum)
+from numpy import (abs, all, argmax, array_equal, ceil, copy, cos, flipud,
+                   float64, linspace, maximum, mean, ones, pi, r_, random,
+                   round, sqrt, sum, zeros)
 from matplotlib.pyplot import (cla, figure, gca, gcf, Normalize, plot, show,
                                subplots, subplot, xlabel, ylabel)
 from matplotlib import animation, rc
@@ -10,12 +12,12 @@ from multiprocessing import Pool
 from pickle import dump, HIGHEST_PROTOCOL
 from scipy import arcsin
 from scipy.special import ellipe
-
+import time
 
 class ParSim(object):
 
-    def __init__(self, bc='NEU', dt=0.01, grid_size=100, param_dict=None, ss_prec=1.001,
-                 T=6000, store_interval=10):
+    def __init__(self, bc='NEU', dt=0.01, grid_size=100, param_dict=None,
+                 ss_prec=1.001, T=1000, store_interval=10):
 
         if param_dict is None:
             param_dict = {'alpha': 1, 'beta': 2, 'dA': 0.28, 'dP': 0.15,
@@ -31,6 +33,7 @@ class ParSim(object):
         self.n = int(self.T/self.dt)
         self.finished_in_time = 0
 
+        # PAR system
         self.alpha = param_dict['alpha']
         self.beta = param_dict['beta']
         self.dA = param_dict['dA']
@@ -48,8 +51,18 @@ class ParSim(object):
             # Mutliply by two, because s_to_v takes the entire circumference,
             # not half of it.
             self.StoV = s_to_v('Circumference', [self.sys_size*2, 15/27])
-
+        # self.StoV = 0.174
         self.Atot = self.ratio * self.Ptot
+
+        # Wave pinning
+        # self.Da = 0.0
+        # self.Db = 10
+        # self.delta = 1
+        # self.gamma = 1
+        # self.k0 = 0.067
+        # self.a = 0.2683312
+        # self.b = 2.0
+        # self.K = 1
 
     def pickle_data(self, fname):
         '''
@@ -63,19 +76,48 @@ class ParSim(object):
             # Pickle self using the highest protocol available.
             dump(self, f, HIGHEST_PROTOCOL)
 
-    def plot_steady_state(self):
-        x = linspace(0, self.grid_size*self.dx, self.grid_size)
-        plot(x, self.A[:, -1], 'red')
-        plot(x, self.P[:, -1], 'dodgerblue')
+    def plot_steady_state(self, c1='salmon', c2='cornflowerblue',
+                          lab='_nolabel_', alpha=1.0, lw=1.5, linestyle='-', norm=False,
+                          printLast=False):
+        # x = linspace(0, self.grid_size*self.dx, self.grid_size)
+        x = linspace(-self.grid_size*self.dx/2, self.grid_size*self.dx/2,
+                     self.grid_size)
+        # for ii, i in enumerate(round(linspace(1, self.A.shape[1], 10))):
+        if printLast:
+            t_points = [1]
+        else:
+            t_points = round(linspace(1, self.A.shape[1], 10))
+
+        for ii, i in enumerate(t_points):
+            ya = self.A[:, -int(i)]
+            yp = self.P[:, -int(i)]
+            if norm:
+                ya = (ya-min(ya))/(max(ya)-min(ya))
+                yp = (yp-min(yp))/(max(yp)-min(yp))
+            plot(x, ya, c1, label='_nolabel_', alpha=alpha/(ii+1)/3+0.34, lw=lw, linestyle=linestyle)
+            plot(x, yp, c2, label=lab, alpha=alpha/(ii+1)/3+0.34, lw=lw, linestyle=linestyle)
         if self.t[-1] >= self.T:
             print('Steady state not reached, plotting last time point.')
-        show()
+        # show()
 
     def set_init_profile(self):
-        self.A = ones((self.grid_size, int(1.2*self.T/self.store_interval)))*1.0
-        self.P = ones((self.grid_size, int(1.2*self.T/self.store_interval)))*1.0
+        self.A = ones((self.grid_size, int(1.2*self.T/self.store_interval)))
+        self.P = ones((self.grid_size, int(1.2*self.T/self.store_interval)))
         self.A[int(round(self.grid_size/2)):, 0] = 0
         self.P[0:int(round(self.grid_size/2)), 0] = 0
+
+        # self.P = 4*ones((self.grid_size, int(1.2*self.T/self.store_interval)))
+        # self.P[0:int(round(0.8*self.grid_size)), 0] = 0
+        # self.A = 4*ones((self.grid_size, int(1.2*self.T/self.store_interval)))
+        # self.A[int(round(0.2*self.grid_size)):, 0] = 0
+
+    def set_init_profile_wave_pin(self):
+        o = ones((self.grid_size, int(10*self.T/self.store_interval)))
+        self.A = self.a*o
+        self.P = self.b*o
+        self.stim = zeros(self.grid_size)
+        ind = int(self.grid_size/10)
+        self.stim[0:ind] = 1 + cos(linspace(0, pi, ind))
 
     def save_movie(self, fname=None, dpi=200, everynth=10):
         size_factor = self.sys_size/(self.grid_size*self.dx)
@@ -86,16 +128,22 @@ class ParSim(object):
         line, = ax.plot([], [], lw=2)
         lineA, = ax.plot([], [], lw=2, color='red')
         lineP, = ax.plot([], [], lw=2, color='dodgerblue')
+        yellow = (242/255, 204/255, 32/255)
         t_text = ax.text(0.1*self.grid_size*self.dx,
                          0.2, r't = ' + str(0) + ' s',
-                         fontsize=12, color='darkorange')
-        ax.tick_params(axis='x', colors='darkorange', which='both')
-        ax.tick_params(axis='y', colors='darkorange', which='both')
-        xlabel(r'Position $[\mu m]$', color='darkorange', fontsize=12)
-        ylabel(r'Concentration $[a.u.]$', color='darkorange', fontsize=12)
-        ax.spines['left'].set_color('darkorange')
-        ax.spines['bottom'].set_color('darkorange')
+                         fontsize=12, color=yellow)
+        ax.tick_params(axis='x', colors=yellow,
+                       which='both', labelsize=10)
+        ax.tick_params(axis='y', colors=yellow,
+                       which='both', labelsize=10)
+        xlabel(r'Position $[\mu m]$', color=yellow,
+               fontsize=12)
+        ylabel(r'Concentration $[a.u.]$', color=yellow,
+               fontsize=12)
+        ax.spines['left'].set_color(yellow)
+        ax.spines['bottom'].set_color(yellow)
         ax.set_facecolor((0, 0, 0))
+        gcf().subplots_adjust(bottom=0.19, left=0.16)
 
         # initialization function: plot the background of each frame
         def init():
@@ -167,7 +215,9 @@ class ParSim(object):
         c2, c3, c4, c5, c6, c7 = 1/5, 3/10, 4/5, 8/9, 1, 1
 
         # Set initial profile
+        ################################################################
         self.set_init_profile()
+        # self.set_init_profile_wave_pin()
         A0 = self.A[:, 0]
         P0 = self.P[:, 0]
         self.t = [0]
@@ -199,7 +249,6 @@ class ParSim(object):
             # A7 and P7 is 0.
             An_new = A0+self.dt*(b1*A1+b3*A3+b4*A4+b5*A5+b6*A6)  # b2/7=0
             Pn_new = P0+self.dt*(b1*P1+b3*P3+b4*P4+b5*P5+b6*P6)  # b2/7=0
-
             # Compute difference between fourth and fifth order
             deltaAnerr = max(abs((b1-bs1)*A1+(b3-bs3)*A3+(b4-bs4)*A4 +
                              (b5-bs5)*A5+(b6-bs6)*A6-bs7*A7))  # b7 is zero
@@ -233,7 +282,7 @@ class ParSim(object):
                     self.A[:, i] = An_new
                     self.P[:, i] = Pn_new
                     self.t_stored.append(self.t[-1])
-                    i = i + 1
+                    i += 1
                     tnext = tnext + self.store_interval
                 # Break if things change by less than 0.1% over
                 # the course of 1 min or maximum difference between
@@ -313,6 +362,102 @@ class Sim_Container:
             pool.close()
             pool.join()
 
+class Dosage_CPSS:
+    '''
+    Sweep dosage cpss space for solution where system is in either of the 
+    following states:
+        # 0 - unpolarized P won
+        # 1 - unpolarized A won
+        # 2 - polarized
+
+    '''
+    def __init__(self, ratio_above, ratio_below, precision, sz_range,
+                 base_set=None, max_iter=10):
+        self.ratio_above = ratio_above
+        self.ratio_below = ratio_below
+        self.max_iter = max_iter
+        self.precision = precision
+        self.sz_range = sz_range
+
+        if base_set is None:
+            self.base_set = {'alpha': 2, 'beta': 2, 'dA': 0.1, 'dP': 0.1,
+                     'kAP': 1, 'kPA': 1, 'koffA': 0.005, 'koffP': 0.005,
+                     'konA': 0.006, 'konP': 0.006, 'Ptot': 1, 'ratio': 1.0,
+                     'sys_size': 30}
+        else:
+            self.base_set = base_set
+
+    def pickle_data(self, fname):
+        '''
+        Pickle data to store on disk.
+
+        path     save pickled object elsewhere other than in the directory
+                 containing the imaging data.
+        postfix  add a postfix to the filename
+        '''
+        with open(fname + '.pickle', 'wb') as f:
+            # Pickle self using the highest protocol available.
+            dump(self, f, HIGHEST_PROTOCOL)
+
+    def simulate(self, dom='A'):
+
+        if dom == 'A':
+            large = 0
+            small = 1
+        elif dom == 'P':
+            large = 1
+            small = 0
+
+        sz = linspace(self.sz_range[0], self.sz_range[1], self.precision)
+
+        sym = [deepcopy(self.base_set) for _ in sz]
+
+        for i, dic in enumerate(sym):
+            sym[i]['sys_size'] = sz[i]
+
+        ratio_below = [self.ratio_below for _ in sym]
+        ratio_above = [self.ratio_above for _ in sym]
+        ratio = [self.ratio_above for _ in sym]
+        outcome = [3 for _ in sym]
+
+        start_time = time.time()
+
+        for j in range(self.max_iter):
+            for i in range(len(sym)):
+                sym[i]['ratio'] = ratio[i]
+            s = Sim_Container(sym, no_workers=8)
+            s.init_simus()
+            s.run_simus()
+            ratio_temp = copy(ratio)
+            for i in range(len(sym)):
+                outcome[i] = s.simus[i].finished_in_time
+                if (dom=='A') and ((outcome[i] == 2) or (outcome[i] == 0)):
+                    ratio[i] = ratio[i] + (ratio_above[i]-ratio[i])/2
+                    ratio_below[i] = ratio_temp[i]
+                elif (dom == 'A') and (outcome[i] == 1):
+                    ratio[i] = ratio[i] - (ratio[i]-ratio_below[i])/2
+                    ratio_above[i] = ratio_temp[i]
+                elif (dom=='P') and ((outcome[i] == 2) or (outcome[i] == 1)):
+                    # Tracer()()
+                    ratio[i] = ratio[i] - (ratio[i]-ratio_below[i])/2
+                    ratio_above[i] = ratio_temp[i]
+                elif (dom == 'P') and (outcome[i] == 0):
+                    ratio[i] = ratio[i] + (ratio_above[i]-ratio[i])/2
+                    ratio_below[i] = ratio_temp[i]
+            # print(ratio)
+
+        self.time = time.time() - start_time
+
+        if dom == 'A':
+            self.ratioA = ratio
+        elif dom == 'P':
+            self.ratioP = ratio
+
+        
+            # if abs(ratio_above[i]-ratio_below[i])/ratio_below[i] < 0.002:
+            #     break
+
+        self.simus = s
 
 def laplacianNEU(Z, dx):
     Zleft = Z[0:-2]

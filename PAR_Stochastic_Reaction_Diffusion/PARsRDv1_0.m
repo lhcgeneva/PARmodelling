@@ -39,13 +39,14 @@ if nargin > 3
     ratioAB = params.ratioAB;
 else
     totalT = 1000; % Total simulation time
-    bins = 40; % Discretization bins
-    boundPos = 20; % Initial boundary position in bin #
+    bins = 26; % Discretization bins
+    boundPos = round(bins/2); % Initial boundary position in bin #
     
-    L   = 134.6/2; %P0: L = 134.6/2; % Length of system in um
+    L   = 134.6/4; %P0: L = 134.6/2; % Length of system in um
     psi = 0.174; % S/V ration from Goehring et al (2011).
+    psi = 0.7 % L/4
     J   = 79; 
-    Bconc   = 79; % in nM
+    Bconc = 79; % in nM
     
     %% asymmetric system
     DA      = 0.28;
@@ -85,7 +86,8 @@ Aconc = Bconc * ratioAB; % Aconc calculated from PAR2/6 ratio
 % Parameter adjustments and calculations
 
 h = L/bins; % Bin length
-w = 1; % Bin width
+w = 2; % Bin width
+% w = h; % Bin width
 Si = h*w; % Area of bin
 totalS = Si * bins; % Total surface area
 totalV = totalS / psi; % Total volume
@@ -124,9 +126,10 @@ if numDom == 2
     A(1:boundPos,1) = 1 * floor(konA * A0 / (konA*bins+koffA)); % Init distribution 
     B(boundPos+1:end,1) = 1 * floor(konB * B0 / (konB*bins+koffB));
 elseif numDom == 4
-    A(1:floor(boundPos/2),1) = 1 * floor(konA * A0 / (konA*bins+koffA)); % Init distribution 
+    % Init distribution 
+    A(1:floor(boundPos/2),1) = 1 * floor(konA * A0 / (konA*bins+koffA));
     B(floor(boundPos/2)+1:2*floor(boundPos/2),1) = 1 * floor(konB * B0 / (konB*bins+koffB));
-    A(2*floor(boundPos/2)+ 1:3*floor(boundPos/2),1) = 1 * floor(konA * A0 / (konA*bins+koffA)); % Init distribution 
+    A(2*floor(boundPos/2)+ 1:3*floor(boundPos/2),1) = 1 * floor(konA * A0 / (konA*bins+koffA)); 
     B(3*floor(boundPos/2)+1:end,1) = 1 * floor(konB * B0 / (konB*bins+koffB));
 elseif numDom == 3
     A(floor(p * bins) + 1:floor((0.5+p)*bins), 1) = 1 * floor(konA * A0 / (konA*bins+koffA));
@@ -341,8 +344,8 @@ end
 % cc_c
 % dd_c
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Plotting   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-close all
-
+% close all
+figure;
 xpos = linspace(0, 1, bins);
 endA = A(:,end);
 endB = B(:,end);

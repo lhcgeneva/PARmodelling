@@ -1,10 +1,10 @@
 function [ param_table_summary, param_table_full ] = create_param_table(Simu)
 %create_param_table Takes list of parameters and creates parameter table
-%   Each row in the output table correspondes to a set of parameters for
+%   Each row in the output table corresponds to a set of parameters for
 %   which the simulation is run. The parameter combinations are constructed
 %   by first creating two arrays (N_R and N_B) which contain, in the order
 %   of input, the number of times each parameter has to be repeated in
-%   order to be able accomodate all the still following parameters as well
+%   order to be able to accomodate all the still following parameters, as well
 %   as how many times each of these has to be written underneath each
 %   other, in order to fill all the ones that have already been filled.
 %   Example: input: {{'L', 'psi'}, {[1, 2, 3], [0.1, 0.2]}}.

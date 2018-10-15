@@ -108,3 +108,8 @@ ENV/
 
 # Movies
 *.mp4
+
+# 
+.DS_Store
+*.png
+Notebooks/Pos_Vs_Dosage\.csv

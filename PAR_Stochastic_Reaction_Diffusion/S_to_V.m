@@ -14,6 +14,11 @@ if strcmp(mode, 'Circumference')
 elseif strcmp(mode, 'Axes')
     shortAxis = describers{1};
     longAxis  = describers{2};
+elseif strcmp(mode, 'Volume')
+    vol = describers{1};
+    aspRatio = describers{2};
+    shortAxis = (3*aspRatio.*vol/(4*3.1415)).^(1/3);
+    longAxis = shortAxis./aspRatio;
 else
     disp('Error in S_to_V: Mode not supported');
     return
@@ -30,6 +35,10 @@ if strcmp(mode, 'Circumference')
     outpt2 = longAxis;
 elseif strcmp(mode, 'Axes')
     outpt1 = shortAxis./longAxis;
+    [~, e] = ellipke((1-shortAxis.^2./longAxis.^2));
+    outpt2 = 4. * longAxis .* e; %Circumference
+elseif strcmp(mode, 'Volume')
+    outpt1 = shortAxis;
     [~, e] = ellipke((1-shortAxis.^2./longAxis.^2));
     outpt2 = 4. * longAxis .* e; %Circumference
 else

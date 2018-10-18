@@ -113,3 +113,4 @@ ENV/
 .DS_Store
 *.png
 Notebooks/Pos_Vs_Dosage\.csv
+*~

@@ -173,6 +173,60 @@ class ParSim(object):
             a.save(fname + '.mp4', savefig_kwargs={'facecolor': 'black'},
                    dpi=dpi)
 
+    def save_indiv_frames(self, fname=None, dpi=200, everynth=10):
+
+        fig = figure(figsize=(4, 2.25), facecolor='white')
+        ax = gca()
+        ax = subplot(111)
+        ax.set_xlim((0, self.grid_size*self.dx))
+        ax.set_ylim((0, 1.2*max(self.A.max(), self.P.max())))
+        line, = ax.plot([], [], lw=2)
+        lineA, = ax.plot([], [], lw=2, color='salmon')
+        lineP, = ax.plot([], [], lw=2, color='cornflowerblue')
+
+        yellow = (0, 0,0)
+        # t_text = ax.text(0.1*self.grid_size*self.dx,
+        #                  0.2, r't = ' + str(0) + ' s',
+        #                  fontsize=12, color=yellow)
+        c_text = ax.text(0.05*self.grid_size*self.dx,
+                         1.05, r'L>CPSS, $\rho_A/\rho_P=0.98$',
+                         fontsize=12, color=yellow)
+        ax.tick_params(axis='x', colors=yellow,
+                       which='both', labelsize=10)
+        ax.tick_params(axis='y', colors=yellow,
+                       which='both', labelsize=10)
+        xlabel(r'Position $(\mu m)$', color=yellow,
+               fontsize=12)
+
+        # Y axis with different colored species
+        ybox1 = TextArea("P", textprops=dict(color="cornflowerblue", 
+                         size=15,rotation=90,ha='left',va='bottom'))
+        ybox2 = TextArea(" / ",     textprops=dict(color="k", 
+                         size=15,rotation=90,ha='left',va='bottom'))
+        ybox3 = TextArea("A ", textprops=dict(color="salmon", 
+                         size=15,rotation=90,ha='left',va='bottom'))
+
+        ybox = VPacker(children=[ybox1, ybox2, ybox3],align="bottom", pad=0, sep=5)
+
+        anchored_ybox = AnchoredOffsetbox(loc=8, child=ybox, pad=0., frameon=False,
+                                          bbox_to_anchor=(-0.2, 0.22), 
+                                          bbox_transform=ax.transAxes, borderpad=0.)
+
+        ax.add_artist(anchored_ybox)
+        gcf().subplots_adjust(bottom=0.25, left=0.2)
+
+        # Loop to create and save individual frames
+        i_e = self.A.shape[1]
+        print(i_e)
+        for i in range(0, i_e, everynth):
+            x = linspace(0, self.grid_size*self.dx, self.A.shape[0])
+            yA = self.A[:, i]
+            yP = self.P[:, i]
+            lineA.set_data(x, yA)
+            lineP.set_data(x, yP)
+            # t_text.set_text(r't = ' + str(round(self.t_stored[i], 0)) + ' s')
+            fig.savefig('frames/hello'+str(i)+'.png')
+
     def simulate(self):
 
         def neu(An, Pn):

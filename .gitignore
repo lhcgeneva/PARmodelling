@@ -114,3 +114,5 @@ ENV/
 *.png
 Notebooks/Pos_Vs_Dosage\.csv
 *~
+*.tif
+*.csv

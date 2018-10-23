@@ -8,6 +8,7 @@ from numpy import (abs, all, argmax, array_equal, ceil, copy, cos, flipud,
 from matplotlib.pyplot import (cla, figure, gca, gcf, Normalize, plot, show,
                                subplots, subplot, xlabel, ylabel)
 from matplotlib import animation, rc
+from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from multiprocessing import Pool
 from pickle import dump, HIGHEST_PROTOCOL
 from scipy import arcsin
@@ -17,7 +18,7 @@ import time
 class ParSim(object):
 
     def __init__(self, bc='NEU', dt=0.01, grid_size=100, param_dict=None,
-                 ss_prec=1.001, T=1000, store_interval=10):
+                 ss_prec=1.001, T=1500, store_interval=10):
 
         if param_dict is None:
             param_dict = {'alpha': 1, 'beta': 2, 'dA': 0.28, 'dP': 0.15,

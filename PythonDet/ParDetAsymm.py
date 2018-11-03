@@ -1,19 +1,17 @@
 from copy import deepcopy
 from IPython.core.debugger import Tracer
-from IPython.display import HTML
-from itertools import repeat
-from numpy import (abs, all, argmax, array_equal, ceil, copy, cos, flipud,
-                   float64, linspace, maximum, mean, ones, pi, r_, random,
-                   round, sqrt, sum, zeros)
-from matplotlib.pyplot import (cla, figure, gca, gcf, Normalize, plot, show,
-                               subplots, subplot, xlabel, ylabel)
-from matplotlib import animation, rc
-from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
+from numpy import (abs, all, copy, cos, flipud, linspace, maximum, ones, pi,
+                   r_, round, sqrt, sum, zeros)
+from matplotlib.pyplot import (figure, gca, gcf, plot, show, subplot, xlabel,
+                               ylabel)
+from matplotlib import animation
+from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, VPacker
 from multiprocessing import Pool
 from pickle import dump, HIGHEST_PROTOCOL
 from scipy import arcsin
 from scipy.special import ellipe
 import time
+
 
 class ParSim(object):
 
@@ -78,8 +76,8 @@ class ParSim(object):
             dump(self, f, HIGHEST_PROTOCOL)
 
     def plot_steady_state(self, c1='salmon', c2='cornflowerblue',
-                          lab='_nolabel_', alpha=1.0, lw=1.5, linestyle='-', norm=False,
-                          printLast=False):
+                          lab='_nolabel_', alpha=1.0, lw=1.5, linestyle='-',
+                          norm=False, printLast=False):
         # x = linspace(0, self.grid_size*self.dx, self.grid_size)
         x = linspace(-self.grid_size*self.dx/2, self.grid_size*self.dx/2,
                      self.grid_size)
@@ -95,8 +93,10 @@ class ParSim(object):
             if norm:
                 ya = (ya-min(ya))/(max(ya)-min(ya))
                 yp = (yp-min(yp))/(max(yp)-min(yp))
-            plot(x, ya, c1, label='_nolabel_', alpha=alpha/(ii+1)/3+0.34, lw=lw, linestyle=linestyle)
-            plot(x, yp, c2, label=lab, alpha=alpha/(ii+1)/3+0.34, lw=lw, linestyle=linestyle)
+            plot(x, ya, c1, label='_nolabel_', alpha=alpha/(ii+1)/3+0.34,
+                 lw=lw, linestyle=linestyle)
+            plot(x, yp, c2, label=lab, alpha=alpha/(ii+1)/3+0.34, lw=lw,
+                 linestyle=linestyle)
         if self.t[-1] >= self.T:
             print('Steady state not reached, plotting last time point.')
         # show()
@@ -121,7 +121,9 @@ class ParSim(object):
         self.stim[0:ind] = 1 + cos(linspace(0, pi, ind))
 
     def save_movie(self, fname=None, dpi=200, everynth=10):
-        size_factor = self.sys_size/(self.grid_size*self.dx)
+        '''
+        Create movie of simulation and save to disk
+        '''
         fig = figure(figsize=(5, 4.0), facecolor='black')
         ax = gca()
         ax.set_xlim((0, self.grid_size*self.dx))
@@ -184,13 +186,12 @@ class ParSim(object):
         lineA, = ax.plot([], [], lw=2, color='salmon')
         lineP, = ax.plot([], [], lw=2, color='cornflowerblue')
 
-        yellow = (0, 0,0)
+        yellow = (0, 0, 0)
         # t_text = ax.text(0.1*self.grid_size*self.dx,
         #                  0.2, r't = ' + str(0) + ' s',
         #                  fontsize=12, color=yellow)
-        c_text = ax.text(0.05*self.grid_size*self.dx,
-                         1.05, r'L>CPSS, $\rho_A/\rho_P=0.98$',
-                         fontsize=12, color=yellow)
+        ax.text(0.05*self.grid_size*self.dx, 1.05,
+                r'L>CPSS, $\rho_A/\rho_P=0.98$', fontsize=12, color=yellow)
         ax.tick_params(axis='x', colors=yellow,
                        which='both', labelsize=10)
         ax.tick_params(axis='y', colors=yellow,
@@ -199,18 +200,21 @@ class ParSim(object):
                fontsize=12)
 
         # Y axis with different colored species
-        ybox1 = TextArea("P", textprops=dict(color="cornflowerblue", 
-                         size=15,rotation=90,ha='left',va='bottom'))
-        ybox2 = TextArea(" / ",     textprops=dict(color="k", 
-                         size=15,rotation=90,ha='left',va='bottom'))
-        ybox3 = TextArea("A ", textprops=dict(color="salmon", 
-                         size=15,rotation=90,ha='left',va='bottom'))
+        ybox1 = TextArea("P", textprops=dict(color="cornflowerblue",
+                         size=15, rotation=90, ha='left', va='bottom'))
+        ybox2 = TextArea(" / ",     textprops=dict(color="k",
+                         size=15, rotation=90, ha='left', va='bottom'))
+        ybox3 = TextArea("A ", textprops=dict(color="salmon",
+                         size=15, rotation=90, ha='left', va='bottom'))
 
-        ybox = VPacker(children=[ybox1, ybox2, ybox3],align="bottom", pad=0, sep=5)
+        ybox = VPacker(children=[ybox1, ybox2, ybox3], align="bottom", pad=0,
+                       sep=5)
 
-        anchored_ybox = AnchoredOffsetbox(loc=8, child=ybox, pad=0., frameon=False,
-                                          bbox_to_anchor=(-0.2, 0.22), 
-                                          bbox_transform=ax.transAxes, borderpad=0.)
+        anchored_ybox = AnchoredOffsetbox(loc=8, child=ybox, pad=0.,
+                                          frameon=False,
+                                          bbox_to_anchor=(-0.2, 0.22),
+                                          bbox_transform=ax.transAxes,
+                                          borderpad=0.)
 
         ax.add_artist(anchored_ybox)
         gcf().subplots_adjust(bottom=0.25, left=0.2)
@@ -417,9 +421,10 @@ class Sim_Container:
             pool.close()
             pool.join()
 
+
 class Dosage_CPSS:
     '''
-    Sweep dosage cpss space for solution where system is in either of the 
+    Sweep dosage cpss space for solution where system is in either of the
     following states:
         # 0 - unpolarized P won
         # 1 - unpolarized A won
@@ -436,9 +441,9 @@ class Dosage_CPSS:
 
         if base_set is None:
             self.base_set = {'alpha': 2, 'beta': 2, 'dA': 0.1, 'dP': 0.1,
-                     'kAP': 1, 'kPA': 1, 'koffA': 0.005, 'koffP': 0.005,
-                     'konA': 0.006, 'konP': 0.006, 'Ptot': 1, 'ratio': 1.0,
-                     'sys_size': 30}
+                             'kAP': 1, 'kPA': 1, 'koffA': 0.005,
+                             'koffP': 0.005, 'konA': 0.006, 'konP': 0.006,
+                             'Ptot': 1, 'ratio': 1.0, 'sys_size': 30}
         else:
             self.base_set = base_set
 
@@ -455,13 +460,6 @@ class Dosage_CPSS:
             dump(self, f, HIGHEST_PROTOCOL)
 
     def simulate(self, dom='A'):
-
-        if dom == 'A':
-            large = 0
-            small = 1
-        elif dom == 'P':
-            large = 1
-            small = 0
 
         sz = linspace(self.sz_range[0], self.sz_range[1], self.precision)
 
@@ -486,13 +484,13 @@ class Dosage_CPSS:
             ratio_temp = copy(ratio)
             for i in range(len(sym)):
                 outcome[i] = s.simus[i].finished_in_time
-                if (dom=='A') and ((outcome[i] == 2) or (outcome[i] == 0)):
+                if (dom == 'A') and ((outcome[i] == 2) or (outcome[i] == 0)):
                     ratio[i] = ratio[i] + (ratio_above[i]-ratio[i])/2
                     ratio_below[i] = ratio_temp[i]
                 elif (dom == 'A') and (outcome[i] == 1):
                     ratio[i] = ratio[i] - (ratio[i]-ratio_below[i])/2
                     ratio_above[i] = ratio_temp[i]
-                elif (dom=='P') and ((outcome[i] == 2) or (outcome[i] == 1)):
+                elif (dom == 'P') and ((outcome[i] == 2) or (outcome[i] == 1)):
                     # Tracer()()
                     ratio[i] = ratio[i] - (ratio[i]-ratio_below[i])/2
                     ratio_above[i] = ratio_temp[i]
@@ -508,11 +506,11 @@ class Dosage_CPSS:
         elif dom == 'P':
             self.ratioP = ratio
 
-        
             # if abs(ratio_above[i]-ratio_below[i])/ratio_below[i] < 0.002:
             #     break
 
         self.simus = s
+
 
 def laplacianNEU(Z, dx):
     Zleft = Z[0:-2]

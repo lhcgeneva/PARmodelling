@@ -1,46 +1,49 @@
-% % Activator Inhibitor model
-% Da = linspace(0.1,0.6, 6);
-% % Da = [0.001, Da];
-% Dh = 15;
-% mu_a = 0.001;
-% mu_h = 0.001;
-% rho = 0.06;
-% rho_a = 0.06;
-% rho_h = 0.0006;
-% si = 40;
-% 
-% figure; hold on;
-% for i = 1:10
-% u1 = activ_inhib(si, Da(i), Dh, mu_a, mu_h, rho, rho_a, rho_h);
-% plot(u1(end, :));
-% end
 %% Otsuji
-% si = 1.295:0.004:1.39;
-si = 1.0:0.25:5;
-% si = 100;
-u1 = zeros(length(si), 200);
-u2 = zeros(length(si), 200);
+n_s = 25; % Precision of sampling of cell sizes
+si = linspace(5, 20, n_s); % cell sizes
+n = 50; % Precision of sampling of concentrations
+conc_tot = logspace(-0.3, 1.2, n); % concentrations
+a1 = 0.5;
 a2 = 0.7;
 s = 1;
-for i=1:length(si)
-[u, v] = otsuji(si(i), 0.1, 100, 25, a2, s);
-u1(i, :) = u(end, :);
-u2(i, :) = v(end, :);
+D1 = 0.1;
+D2 = 1000000;
+
+for j = 1:length(si)
+    u1 = zeros(n, 200);
+    u2 = zeros(n, 200);
+    parfor i = 1:n
+    [u, v] = otsuji(si(j), D1, D2, a1, a2, s, conc_tot(i));
+    u1(i, :) = u(end, :);
+    u2(i, :) = v(end, :);
+    end
+    u1_all{j} = u1;
+    u2_all{j} = u2;
 end
-%%
+
+%% Plot all simulations with one figure per size
 figure; hold on;
-for i = 1:length(si)
-plot(u*ones(size(u1(i, :))));
-plot(u1(i, :));
-plot(u2(i, :));
-% rho_tot = sum(u1(i, :))+sum(u2(i, :));
+for j = 1 : length(u1_all)
+    figure; hold on;
+    for i = 1:n
+    % plot(u*ones(size(u1(i, :))));
+    plot(u1_all{j}(i, :));
+    % plot(u2(i, :));
+    % rho_tot = sum(u1(i, :))+sum(u2(i, :));
+    end
 end
-%%
-rho_tot = sum(u1(i, :))+sum(u2(i, :));
-rho_tot = rho_tot/200;
-v = rho_tot/(a2*s*rho_tot+1)^2
-u = (rho_tot - v)
-plot((u1(2:end, 1)-u)./(u1(1:end-1, 1)-u));
+%% Plot entire phase space
+sizes = repmat(si', 1, n);
+concs = repmat(conc_tot', 1, n_s)';
+logical = cell2mat(cellfun(@(x) (max(x') - min(x')) < 0.01, u1_all, 'uni', 0)');
+
+figure; hold on;
+plot(sizes(logical==0), concs(logical==0), '.', 'MarkerSize', 15);
+plot(sizes(logical==1), concs(logical==1), '.', 'MarkerSize', 15);
+ax = gca;
+ax.FontSize=18;
+xlabel('system size (\mum)');
+ylabel('concentration (a.u.)');
 %% Calculate CPSS vs D
 % Breakdown for Otsuji happens between 1.0 and 1.25, verify this for
 % different Ds and sizes. This can be done using Lcpss =? A*sqrt(D), with 

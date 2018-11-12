@@ -1,8 +1,8 @@
 %% Otsuji
 n_s = 25; % Precision of sampling of cell sizes
 si = linspace(5, 20, n_s); % cell sizes
-n = 50; % Precision of sampling of concentrations
-conc_tot = logspace(-0.3, 1.2, n); % concentrations
+n = 25; % Precision of sampling of concentrations
+conc_tot = logspace(-0.3, 2, n); % concentrations
 a1 = 0.5;
 a2 = 0.7;
 s = 1;
@@ -27,6 +27,7 @@ for j = 1 : length(u1_all)
     figure; hold on;
     for i = 1:n
     % plot(u*ones(size(u1(i, :))));
+%     plot(u1_all{j}(i, :)/max(u1_all{j}(i, :))); % Normalized to max
     plot(u1_all{j}(i, :));
     % plot(u2(i, :));
     % rho_tot = sum(u1(i, :))+sum(u2(i, :));
@@ -36,6 +37,45 @@ end
 sizes = repmat(si', 1, n);
 concs = repmat(conc_tot', 1, n_s)';
 logical = cell2mat(cellfun(@(x) (max(x') - min(x')) < 0.01, u1_all, 'uni', 0)');
+
+figure; hold on;
+plot(sizes(logical==0), concs(logical==0), '.', 'MarkerSize', 15);
+plot(sizes(logical==1), concs(logical==1), '.', 'MarkerSize', 15);
+ax = gca;
+ax.FontSize=18;
+xlabel('system size (\mum)');
+ylabel('concentration (a.u.)');
+%% Goryachev Nate
+n_s = 25; % Precision of sampling of cell sizes
+si = linspace(10, 40, n_s); % cell sizes
+n = 25; % Precision of sampling of concentrations
+conc_tot = logspace(-0.3, 2, n); % concentrations
+a1 = 0.1;
+a2 = 0.1;
+a3 = 0.005;
+D1 = 0.1;
+D2 = 10000;
+u1_all = cell(1, 1);
+u2_all = cell(1, 1);
+% m = zeros(100001, n);
+
+for j = 1:length(si)
+    u1 = zeros(n, 200);
+    u2 = zeros(n, 200);
+    parfor i = 1:n
+    [x, u, v, mass] = goryachev(si(j), D1, D2, a1, a2, a3, conc_tot(i));
+    u1(i, :) = u(end, :);
+    u2(i, :) = v(end, :);
+%     m(:, i) = mass;
+    end
+    u1_all{j} = u1;
+    u2_all{j} = u2;
+end
+%% Plot entire phase space
+sizes = repmat(si', 1, n);
+concs = repmat(conc_tot', 1, n_s)';
+% logical = cell2mat(cellfun(@(x) (max(x') - min(x')) < 10, u1_all, 'uni', 0)');
+logical = cell2mat(cellfun(@(x, y) ((max(x') - min(x'))./(sum(x')+sum(y'))*200) < 0.01, u1_all, u2_all, 'uni', 0)');
 
 figure; hold on;
 plot(sizes(logical==0), concs(logical==0), '.', 'MarkerSize', 15);

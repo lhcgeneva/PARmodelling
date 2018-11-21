@@ -1,7 +1,7 @@
 from copy import deepcopy
 from IPython.core.debugger import Tracer
-from numpy import (abs, all, copy, cos, flipud, linspace, maximum, ones, pi,
-                   r_, round, sqrt, sum, zeros)
+from numpy import (abs, all, copy, flipud, linspace, maximum, ones,
+                   r_, round, sqrt, sum)
 from matplotlib.pyplot import (figure, gca, gcf, plot, show, subplot, xlabel,
                                ylabel)
 from matplotlib import animation
@@ -15,9 +15,12 @@ import time
 
 class ParSim(object):
 
-    def __init__(self, bc='NEU', dt=0.01, grid_size=100, mechanism='PAR',
+    def __init__(self, bc='NEU', dt=0.01, grid_size=100, mechanism=1,
                  param_dict=None, ss_prec=1.001, T=1500, store_interval=10):
-
+        '''
+        mechanism: 1 - PAR system
+                   2 - WP system
+        '''
         if param_dict is None:
             param_dict = {'alpha': 1, 'beta': 2, 'dA': 0.28, 'dP': 0.15,
                           'kAP': 0.19, 'kPA': 2, 'koffA': 0.0054,
@@ -35,7 +38,7 @@ class ParSim(object):
         self.finished_in_time = 0
         self.sys_size = param_dict['sys_size']
 
-        if self.mechanism is 'PAR':
+        if self.mechanism is 1:
             # PAR system
             self.alpha = param_dict['alpha']
             self.beta = param_dict['beta']
@@ -50,7 +53,7 @@ class ParSim(object):
             self.Ptot = param_dict['Ptot']
             self.ratio = param_dict['ratio']
             self.Atot = self.ratio * self.Ptot
-        elif self.mechanism is 'WP':
+        elif self.mechanism is 2:
             # Wave pinning
             self.dM = 0.1
             self.dC =10
@@ -271,8 +274,8 @@ class ParSim(object):
             # f = Cn[1:-1]*(self.k0 + self.gamma*Mn[1:-1]**2 /
             #               (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
             # Cytoplasmic diffusion infinite
-            f = (self.total-sum(Mn))/len(Mn)*(self.k0 + self.gamma*Mn[1:-1]**2 /
-                          (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
+            f = (self.total-sum(Mn))/len(Mn)*(self.k0+self.gamma*Mn[1:-1]**2 /
+                                (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
             Rm = self.dM*delM + f
             Rc = self.dC*delC - f
             # Return arrays with first and last two elements equal
@@ -300,10 +303,10 @@ class ParSim(object):
         c2, c3, c4, c5, c6, c7 = 1/5, 3/10, 4/5, 8/9, 1, 1
 
         # Set initial profile, set reaction terms to PAR or WP
-        if self.mechanism is 'PAR':
+        if self.mechanism is 1:
             self.set_init_profile()
             neu = neu_PAR
-        elif self.mechanism is 'WP':
+        elif self.mechanism is 2:
             self.set_init_profile_wave_pin()
             neu = neu_WP
 
@@ -391,20 +394,19 @@ class ParSim(object):
                 A0 = An_new
                 P0 = Pn_new
                 self.no_reject += 1
-                # Tracer()()
             else:
                 self.reject += 1
 
-            if self.mechanism is 'PAR':
+            if self.mechanism is 1:
                 if (An_new[0] < Pn_new[0]) or (Pn_new[-1] < An_new[-1]):
                     break
-            elif self.mechanism is 'WP':
+            elif self.mechanism is 2:
                 pass
         self.A[:, i] = An_new
         self.P[:, i] = Pn_new
         self.t_stored.append(self.t[-1])
         # Cut A and P to not include any zeros from preallocation
-        if self.mechanism is 'PAR':
+        if self.mechanism is 1:
             self.A = self.A[:, ~all(self.A == 1, axis=0)]
             self.P = self.P[:, ~all(self.P == 1, axis=0)]
 
@@ -415,7 +417,7 @@ class ParSim(object):
             else:
                 self.finished_in_time = 2
 
-        elif self.mechanism is 'WP':
+        elif self.mechanism is 2:
             self.A = self.A[:, ~all(self.A == 1, axis=0)]
             self.P = self.P[:, ~all(self.P == 0.2, axis=0)]
 

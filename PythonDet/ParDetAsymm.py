@@ -299,11 +299,14 @@ class ParSim(object):
 
         c2, c3, c4, c5, c6, c7 = 1/5, 3/10, 4/5, 8/9, 1, 1
 
-        # Set initial profile
+        # Set initial profile, set reaction terms to PAR or WP
         if self.mechanism is 'PAR':
             self.set_init_profile()
+            neu = neu_PAR
         elif self.mechanism is 'WP':
             self.set_init_profile_wave_pin()
+            neu = neu_WP
+
         print(self.sys_size)
         A0 = self.A[:, 0]
         P0 = self.P[:, 0]
@@ -315,11 +318,6 @@ class ParSim(object):
         # self.errRatio = []
         self.reject = 0
         self.no_reject = 0
-        # Set reaction to PAR or WP
-        if self.mechanism is 'WP':
-            neu = neu_WP
-        elif self.mechanism is 'PAR':
-            neu = neu_PAR
 
         while self.t[-1] < self.T:
             # Calculate increments for RK45

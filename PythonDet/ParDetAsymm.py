@@ -15,8 +15,8 @@ import time
 
 class ParSim(object):
 
-    def __init__(self, bc='NEU', dt=0.01, grid_size=100, param_dict=None,
-                 ss_prec=1.001, T=1500, store_interval=10):
+    def __init__(self, bc='NEU', dt=0.01, grid_size=100, mechanism='PAR',
+                 param_dict=None, ss_prec=1.001, T=1500, store_interval=10):
 
         if param_dict is None:
             param_dict = {'alpha': 1, 'beta': 2, 'dA': 0.28, 'dP': 0.15,
@@ -25,43 +25,48 @@ class ParSim(object):
                           'Ptot': 1, 'ratio': 1.56, 'sys_size': 134.6/2}
         self.dt = dt  # time step
         self.grid_size = grid_size  # length of grid
+        self.mechanism = mechanism
         self.ss_prec = ss_prec
         self.store_interval = store_interval
         self.T = T  # wall time
+
         self.dx = param_dict['sys_size']/self.grid_size  # space step
         self.n = int(self.T/self.dt)
         self.finished_in_time = 0
-
-        # PAR system
-        self.alpha = param_dict['alpha']
-        self.beta = param_dict['beta']
-        self.dA = param_dict['dA']
-        self.dP = param_dict['dP']
-        self.kAP = param_dict['kAP']
-        self.kPA = param_dict['kPA']
-        self.konA = param_dict['konA']
-        self.konP = param_dict['konP']
-        self.koffA = param_dict['koffA']
-        self.koffP = param_dict['koffP']
-        self.Ptot = param_dict['Ptot']
-        self.ratio = param_dict['ratio']
         self.sys_size = param_dict['sys_size']
+
+        if self.mechanism is 'PAR':
+            # PAR system
+            self.alpha = param_dict['alpha']
+            self.beta = param_dict['beta']
+            self.dA = param_dict['dA']
+            self.dP = param_dict['dP']
+            self.kAP = param_dict['kAP']
+            self.kPA = param_dict['kPA']
+            self.konA = param_dict['konA']
+            self.konP = param_dict['konP']
+            self.koffA = param_dict['koffA']
+            self.koffP = param_dict['koffP']
+            self.Ptot = param_dict['Ptot']
+            self.ratio = param_dict['ratio']
+            self.Atot = self.ratio * self.Ptot
+        elif self.mechanism is 'WP':
+            # Wave pinning
+            self.dM = 0.1
+            self.dC =10
+            self.delta = 1
+            self.gamma = 1
+            self.k0 = 0.067
+            self.total = param_dict['ratio']*250
+            # self.a = 0.2683312
+            # self.b = 2.0
+            self.K = 1
+
         if bc is 'NEU':
             # Mutliply by two, because s_to_v takes the entire circumference,
             # not half of it.
             self.StoV = s_to_v('Circumference', [self.sys_size*2, 15/27])
         # self.StoV = 0.174
-        self.Atot = self.ratio * self.Ptot
-
-        # Wave pinning
-        # self.Da = 0.0
-        # self.Db = 10
-        # self.delta = 1
-        # self.gamma = 1
-        # self.k0 = 0.067
-        # self.a = 0.2683312
-        # self.b = 2.0
-        # self.K = 1
 
     def pickle_data(self, fname):
         '''
@@ -114,11 +119,12 @@ class ParSim(object):
 
     def set_init_profile_wave_pin(self):
         o = ones((self.grid_size, int(10*self.T/self.store_interval)))
-        self.A = self.a*o
-        self.P = self.b*o
-        self.stim = zeros(self.grid_size)
-        ind = int(self.grid_size/10)
-        self.stim[0:ind] = 1 + cos(linspace(0, pi, ind))
+        self.A = 2*0.2683312*o
+        self.P = 2*o
+        self.A[:, 1:] = 1
+        self.P[:, 1:] = 1
+        self.A[int(self.grid_size/2):, 0] = 0
+        # self.P[int(self.grid_size/2):, :] = 0
 
     def save_movie(self, fname=None, dpi=200, everynth=10):
         '''
@@ -233,7 +239,7 @@ class ParSim(object):
 
     def simulate(self):
 
-        def neu(An, Pn):
+        def neu_PAR(An, Pn):
             '''
             Von Neumann conditions, setting the derivative at the
             boundaries to zero.
@@ -252,6 +258,26 @@ class ParSim(object):
             # Return arrays with first and last two elements equal
             # respecitvely, to impose zero derivatives
             return r_[Ra[0], Ra, Ra[-1]], r_[Rp[0], Rp, Rp[-1]]
+
+        def neu_WP(Mn, Cn):
+            '''
+            Von Neumann conditions, setting the derivative at the
+            boundaries to zero.
+            '''
+            delM = laplacianNEU(Mn, self.dx)
+            delC = laplacianNEU(Cn, self.dx)
+
+            # Finite cytoplasmic diffusion
+            # f = Cn[1:-1]*(self.k0 + self.gamma*Mn[1:-1]**2 /
+            #               (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
+            # Cytoplasmic diffusion infinite
+            f = (self.total-sum(Mn))/len(Mn)*(self.k0 + self.gamma*Mn[1:-1]**2 /
+                          (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
+            Rm = self.dM*delM + f
+            Rc = self.dC*delC - f
+            # Return arrays with first and last two elements equal
+            # respecitvely, to impose zero derivatives
+            return r_[Rm[0], Rm, Rm[-1]], r_[Rc[0], Rc, Rc[-1]]
 
         # Adaptive step size parameters
         atol = 0.000001
@@ -274,9 +300,11 @@ class ParSim(object):
         c2, c3, c4, c5, c6, c7 = 1/5, 3/10, 4/5, 8/9, 1, 1
 
         # Set initial profile
-        ################################################################
-        self.set_init_profile()
-        # self.set_init_profile_wave_pin()
+        if self.mechanism is 'PAR':
+            self.set_init_profile()
+        elif self.mechanism is 'WP':
+            self.set_init_profile_wave_pin()
+        print(self.sys_size)
         A0 = self.A[:, 0]
         P0 = self.P[:, 0]
         self.t = [0]
@@ -287,6 +315,12 @@ class ParSim(object):
         # self.errRatio = []
         self.reject = 0
         self.no_reject = 0
+        # Set reaction to PAR or WP
+        if self.mechanism is 'WP':
+            neu = neu_WP
+        elif self.mechanism is 'PAR':
+            neu = neu_PAR
+
         while self.t[-1] < self.T:
             # Calculate increments for RK45
             if (self.t[-1] == 0) or not (Pn_new == P0[1]).any():
@@ -359,24 +393,33 @@ class ParSim(object):
                 A0 = An_new
                 P0 = Pn_new
                 self.no_reject += 1
+                # Tracer()()
             else:
                 self.reject += 1
 
-            if (An_new[0] < Pn_new[0]) or (Pn_new[-1] < An_new[-1]):
-                break
+            if self.mechanism is 'PAR':
+                if (An_new[0] < Pn_new[0]) or (Pn_new[-1] < An_new[-1]):
+                    break
+            elif self.mechanism is 'WP':
+                pass
         self.A[:, i] = An_new
         self.P[:, i] = Pn_new
         self.t_stored.append(self.t[-1])
         # Cut A and P to not include any zeros from preallocation
-        self.A = self.A[:, ~all(self.A == 1, axis=0)]
-        self.P = self.P[:, ~all(self.P == 1, axis=0)]
+        if self.mechanism is 'PAR':
+            self.A = self.A[:, ~all(self.A == 1, axis=0)]
+            self.P = self.P[:, ~all(self.P == 1, axis=0)]
 
-        if (self.A[0, -1] < self.P[0, -1]):
-            self.finished_in_time = 0
-        elif (self.P[-1, -1] < self.A[-1, -1]):
-            self.finished_in_time = 1
-        else:
-            self.finished_in_time = 2
+            if (self.A[0, -1] < self.P[0, -1]):
+                self.finished_in_time = 0
+            elif (self.P[-1, -1] < self.A[-1, -1]):
+                self.finished_in_time = 1
+            else:
+                self.finished_in_time = 2
+
+        elif self.mechanism is 'WP':
+            self.A = self.A[:, ~all(self.A == 1, axis=0)]
+            self.P = self.P[:, ~all(self.P == 0.2, axis=0)]
 
 
 class Sim_Container:
@@ -491,7 +534,6 @@ class Dosage_CPSS:
                     ratio[i] = ratio[i] - (ratio[i]-ratio_below[i])/2
                     ratio_above[i] = ratio_temp[i]
                 elif (dom == 'P') and ((outcome[i] == 2) or (outcome[i] == 1)):
-                    # Tracer()()
                     ratio[i] = ratio[i] - (ratio[i]-ratio_below[i])/2
                     ratio_above[i] = ratio_temp[i]
                 elif (dom == 'P') and (outcome[i] == 0):

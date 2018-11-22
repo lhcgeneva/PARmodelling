@@ -1,14 +1,14 @@
 %% Wave Pinning, Takes roughly 2 mins for 40x40 grid
 tic
-n_s = 10; % Precision of sampling of cell sizes
+n_s = 1; % Precision of sampling of cell sizes
 si = linspace(10, 40, n_s); % cell sizes
 n = 10; % Precision of sampling of concentrations
 % conc_tot = logspace(-0.2, 0.3, n); % concentrations
 conc_tot = linspace(0.9, 1.7, n); % concentrations
-delta = 0.005;
+delta = 1;%0.005;
 gamma = 1;
 Da = 0.1;
-Dc = 10000;
+Dc = 100000000000000000;
 K = 1*conc_tot;
 
 u1_all = cell(length(si));
@@ -46,14 +46,14 @@ parfor i = 1:length(Da)
 end
 %% Otsuji
 n_s = 10; % Precision of sampling of cell sizes
-si = linspace(10, 100, n_s); % cell sizes
+si = linspace(50, 150, n_s); % cell sizes
 n = 10; % Precision of sampling of concentrations
 conc_tot = linspace(0.1, 6, n); % concentrations
 a1 = 0.005;
 a2 = 0.7*conc_tot; % a2 needs to be scaled by concentration for right antagonism
 s = 1;
 D1 = 0.1;
-D2 = 10000;
+D2 = 1000000;
 tic
 for j = 1:length(si)
     u1 = zeros(n, 200);
@@ -74,23 +74,24 @@ logical = cell2mat(cellfun(@(x, y) ((max(x') - min(x'))./...
 size_logical = size(logical);
 top = size_logical(2) - top + 1;
 [~, bot]=min(logical,[],2);
-csvwrite('otsuji_matlab_sizeDosageTopBot.csv', [conc_tot', si', top, bot]);
+% csvwrite('otsuji_matlab_sizeDosageTopBot.csv', [conc_tot', si', top, bot]);
 %%
 bottom = (conc_tot(bot)+conc_tot(bot-1))/2;
 toppom = conc_tot(top);
 %% Goryachev Nate
 tic
 n_s = 10; % Precision of sampling of cell sizes
-si = linspace(10, 40, n_s); % cell sizes, DO NOT USE LOG SPACING, OTHERWISE
+% si = linspace(10, 40, n_s); % cell sizes, DO NOT USE LOG SPACING, OTHERWISE
                             % boundary calculation below (average) doesn't
                             % work anymore!
+si = 20;
 n = 10; % Precision of sampling of concentrations
 conc_tot = linspace(0.1, 50, n); % concentrations
-a1 = 0.005;
-a2 = 0.005;
+a1 = 0.05;
+a2 = 0.05;
 a3 = 0.005;
 D1 = 0.1;
-D2 = 10000;
+D2 = 100;
 u1_all = cell(1, 1);
 u2_all = cell(1, 1);
 
@@ -114,7 +115,7 @@ logical = cell2mat(cellfun(@(x, y) ((max(x') - min(x'))./...
 size_logical = size(logical);
 top = size_logical(2) - top + 1;
 [~, bot]=min(logical,[],2);
-csvwrite('goryachev_matlab_sizeDosageTopBot.csv', [conc_tot', si', top, bot]);
+% csvwrite('goryachev_matlab_sizeDosageTopBot.csv', [conc_tot', si', top, bot]);
 
 %% Plot all simulations with one figure per size
 for j = 1 :  length(u1_all)

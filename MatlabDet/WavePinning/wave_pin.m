@@ -1,17 +1,17 @@
 function [u1, u2] = wave_pin(Da, Dc, si, delta, gamma, K, conc_tot)
 % Mass conserved model for wave pinning
 
-x = linspace(0, si, 800);
-t = 0:1:10000;
+x = linspace(0, si, 200);
+t = 0:1:100000;
 ic = @(x) wp_ic(x, si, conc_tot);
 pde = @(x, t, u, DuDx) wp_pde(x, t, u, DuDx, Da, Dc, delta, gamma, K);
 options = odeset('RelTol',1e-13,'AbsTol',1e-13);
 sol = pdepe(0, pde, ic, @wp_bc, x, t, options);
 
-% u1 = sol(:,:,1);
-% u2 = sol(:,:,2);
-u1 = sol(end,:,1);
-u2 = sol(end,:,2);
+u1 = sol(:,:,1);
+u2 = sol(:,:,2);
+% u1 = sol(end,:,1);
+% u2 = sol(end,:,2);
 % figure;
 % plot(x, u1(end, :));
 % axis([0, si, 0, 1.5]);

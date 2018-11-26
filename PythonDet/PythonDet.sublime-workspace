@@ -1,0 +1,403 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"sy",
+				"sys_size"
+			],
+			[
+				"gr",
+				"grid_size"
+			],
+			[
+				"m",
+				"mechanism"
+			],
+			[
+				"subplots",
+				"subplots_adjust"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "ParDetAsymm.py",
+			"settings":
+			{
+				"buffer_size": 23329,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "DosageCPSSOptim.py",
+			"settings":
+			{
+				"buffer_size": 1428,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"sublime",
+				"SublimeLinter: Lint This View"
+			],
+			[
+				"Package Control: list",
+				"Package Control: List Packages"
+			],
+			[
+				"Package Control: remo",
+				"Package Control: Remove Package"
+			],
+			[
+				"Package Control: inst",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: List",
+				"Package Control: List Packages"
+			],
+			[
+				"install pa",
+				"Package Control: Install Package"
+			],
+			[
+				"install ",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/hubatsch/Desktop/PARmodelling/PythonDet/ParDetAsymm.py",
+		"/Users/hubatsch/Library/Application Support/Sublime Text 3/Packages/Git/Git.sublime-settings",
+		"/Users/hubatsch/Desktop/Omar/modules_lecture_11_01_2018.py",
+		"/Users/hubatsch/Downloads/license.lic"
+	],
+	"find":
+	{
+		"height": 40.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"Print('c'",
+			"dA",
+			"dC",
+			"Trac",
+			"system",
+			"neu",
+			"profile_wav",
+			"gamma",
+			"large",
+			"c_text",
+			"size_fact",
+			"mean",
+			"ceil",
+			"array_eq",
+			"argmax",
+			"rc",
+			"cla",
+			"self",
+			"repeat",
+			"HTML"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "ParDetAsymm.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 23329,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								10951,
+								10951
+							]
+						],
+						"settings":
+						{
+							"SL.231.region_keys":
+							[
+								"SL.flake8.Highlights.|c08269e01804be2fcd9f9d78a25b20582767372fee09033626292fd3796c0cf0|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|6575d84c0b32b73eadb9039421031b62a186f9645ec1ac0cd69ef31e392c074b|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|1b3196aff8a23cc0d914ab4738dfd9a891d2aadf1e080bce288e5c95e23e6a06|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Gutter.|region.redish markup.error.sublime_linter|dot",
+								"SL.flake8.Highlights.|87df4a1c44904b2e729166515118f926c57c16fbc3f8c40f952e696942aa65a4|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.flake8.Highlights.|3a9f7486fe2249282bc5a2a715439dcc2e74e8e887e7c32e425b45020bd894d0|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|605f874543af1f01b79fee4c16ae77c00940e86d9bd7361cce1dedc5a001afa3|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|193a672b857a76ff765f08b4eb932e2413824e63a140089f6a1b6a088d5c0bd1|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|768c76d50f2363b4a44509f56b4b65e6fe59df2c1d1c7dcca93a112ba871a1fc|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|1dc09a28be9000260303771cf827484160c4f5a949265e247ca2884339e586db|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|f9eb7dce96e9e8137a8bba0a957608dad56a8d0c6e05b05a16f300f7dc7e69ca|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|29282786d4b39eb5d00195b57755dd17e5411b8d1e880d4060568f8b6e3984ea|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|fdc35131d9f44733418f57c5732bbe25ed4791c771bb9a99c22b3f188fc3366d|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|129c336ae0f7ea3180c4fd522024c71e65972296b7dd62f8f863167f17b3aa1b|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|f1929cd6bcaa56df04954aba08cf79865bb2b622c1f90dc6ee55d79f7e122db1|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|b22d7f777c4fa2112ac215cacf2c202104fd153e6fefb292b3113fe394fa7d6e|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|1b421d82ad82a3438cd3f8b1deb72936f771847b88b24a1afb681be409002a29|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|c94d3cb042a64135c0ef5f2dd012c3b7e71f1c1186b6d6d00a1c46c885f55601|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|89b2a34fb682cd098e05621dfd214250431a77a2eafc63e16a366d3cc917db78|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|a400c94c2340c9c634346667225b0f92dc776e4e86f5bc58ffadc3607f2f0d47|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.flake8.Highlights.|bb7365b544b4a8aec284ae6b74e00b4137807121d037deb863b2a20e41e827c5|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|fd32c8e785c813c5e1c57c365510b250aa39bb54c4d1f27de4fef8ad1781730e|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|bf7e6d5dd15c29ce03289db9e081de76b0168c75958121fb18d385336c5a637e|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3747.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 1,
+					"file": "DosageCPSSOptim.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1428,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"SL.15.region_keys":
+							[
+								"SL.flake8.Highlights.|65ab91a4f00a71194dc64bc9248e829858741d3cb77f95ba5d5d2528e984ceac|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|9ea6321ad829de6f1eca36cdc99ada33d562d90a4deb667e96b588d66e15feed|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|f44dcc557fffa8c11fcb7c3906e92cc5a607861d80a3d2274e67883741fb4cd0|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|c36b64d0989cc1e3e924011cd595bf333d6beaeffb4d17fe39c02f94bbceb333|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|d31f7da10ff838f8f0f5c486dcb14b073635ec95020cec302b7fe0b41c2ac4bf|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Gutter.|region.redish markup.error.sublime_linter|dot",
+								"sublime_linter.protected_regions",
+								"SL.flake8.Highlights.|8892a90375fae1ad9ab23ce7569c30168d5db35cbf0bc0d46f484b4b217a72d9|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|3b7cf7688f4cd05ff4b9e6bb0a663b08cd560ceac746714bd51e5489fcd484be|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.19.region_keys":
+							[
+								"SL.flake8.Gutter.|region.redish markup.error.sublime_linter|dot",
+								"SL.flake8.Highlights.|65ab91a4f00a71194dc64bc9248e829858741d3cb77f95ba5d5d2528e984ceac|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|9ea6321ad829de6f1eca36cdc99ada33d562d90a4deb667e96b588d66e15feed|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.flake8.Highlights.|3b7cf7688f4cd05ff4b9e6bb0a663b08cd560ceac746714bd51e5489fcd484be|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|c36b64d0989cc1e3e924011cd595bf333d6beaeffb4d17fe39c02f94bbceb333|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.flake8.Highlights.|d31f7da10ff838f8f0f5c486dcb14b073635ec95020cec302b7fe0b41c2ac4bf|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|f44dcc557fffa8c11fcb7c3906e92cc5a607861d80a3d2274e67883741fb4cd0|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|8892a90375fae1ad9ab23ce7569c30168d5db35cbf0bc0d46f484b4b217a72d9|region.redish markup.error.sublime_linter|32"
+							],
+							"SL.192.region_keys":
+							[
+								"SL.flake8.Gutter.|region.redish markup.error.sublime_linter|dot",
+								"SL.flake8.Highlights.|9ea6321ad829de6f1eca36cdc99ada33d562d90a4deb667e96b588d66e15feed|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|d31f7da10ff838f8f0f5c486dcb14b073635ec95020cec302b7fe0b41c2ac4bf|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"sublime_linter.protected_regions",
+								"SL.flake8.Highlights.|3b7cf7688f4cd05ff4b9e6bb0a663b08cd560ceac746714bd51e5489fcd484be|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|8892a90375fae1ad9ab23ce7569c30168d5db35cbf0bc0d46f484b4b217a72d9|region.redish markup.error.sublime_linter|32",
+								"SL.flake8.Highlights.|c36b64d0989cc1e3e924011cd595bf333d6beaeffb4d17fe39c02f94bbceb333|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|65ab91a4f00a71194dc64bc9248e829858741d3cb77f95ba5d5d2528e984ceac|region.yellowish markup.warning.sublime_linter|32",
+								"SL.flake8.Highlights.|f44dcc557fffa8c11fcb7c3906e92cc5a607861d80a3d2274e67883741fb4cd0|region.redish markup.error.sublime_linter|32"
+							],
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 24.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.5,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.SublimeLinter":
+	{
+		"height": 108.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "PythonDet.sublime-project",
+	"replace":
+	{
+		"height": 44.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"~/Desktop/Omar_PS_modules/Omar_PS.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

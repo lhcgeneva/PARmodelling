@@ -36,6 +36,7 @@ class ParSim(object):
         self.dx = param_dict['sys_size']/self.grid_size  # space step
         self.n = int(self.T/self.dt)
         self.finished_in_time = 0
+        self.ratio = param_dict['ratio']
         self.sys_size = param_dict['sys_size']
 
         if self.mechanism is 1:
@@ -51,19 +52,23 @@ class ParSim(object):
             self.koffA = param_dict['koffA']
             self.koffP = param_dict['koffP']
             self.Ptot = param_dict['Ptot']
-            self.ratio = param_dict['ratio']
             self.Atot = self.ratio * self.Ptot
         elif self.mechanism is 2:
             # Wave pinning
             self.dM = 0.1
-            self.dC =10
-            self.delta = 1
-            self.gamma = 1
-            self.k0 = 0.067
-            self.total = param_dict['ratio']*250
+            self.dC =1
+            self.delta = 1/9
+            self.gamma = 1/9
+            self.k0 = 0.067/9
             # self.a = 0.2683312
             # self.b = 2.0
             self.K = 1
+        elif self.mechanism is 3:
+            self.dM = 0.1
+            self.dC = 100000
+            self.a1 = 1
+            self.a2 = 0.7
+            self.s = 1
 
         if bc is 'NEU':
             # Mutliply by two, because s_to_v takes the entire circumference,
@@ -122,11 +127,12 @@ class ParSim(object):
 
     def set_init_profile_wave_pin(self):
         o = ones((self.grid_size, int(10*self.T/self.store_interval)))
-        self.A = 2*0.2683312*o
-        self.P = 2*o
+        self.A = 0.5367*self.ratio*o
+        self.P = 2*self.ratio*o
         self.A[:, 1:] = 1
         self.P[:, 1:] = 1
         self.A[int(self.grid_size/2):, 0] = 0
+        self.total = sum(self.A[:, 0])+sum(self.P[:, 0])
         # self.P[int(self.grid_size/2):, :] = 0
 
     def save_movie(self, fname=None, dpi=200, everynth=10):
@@ -244,8 +250,8 @@ class ParSim(object):
 
         def neu_PAR(An, Pn):
             '''
-            Von Neumann conditions, setting the derivative at the
-            boundaries to zero.
+            Reaction terms for PAR system, Von Neumann boundary conditions,
+            setting the derivative at the boundaries to zero.
             '''
             delA = laplacianNEU(An, self.dx)
             delP = laplacianNEU(Pn, self.dx)
@@ -264,8 +270,29 @@ class ParSim(object):
 
         def neu_WP(Mn, Cn):
             '''
-            Von Neumann conditions, setting the derivative at the
-            boundaries to zero.
+            Reaction terms for wave pinning, Von Neumann boundary conditions,
+            setting the derivative at the boundaries to zero.
+            '''
+            delM = laplacianNEU(Mn, self.dx)
+            delC = laplacianNEU(Cn, self.dx)
+
+            # Finite cytoplasmic diffusion
+            f = Cn[1:-1]*(self.k0 + self.gamma*Mn[1:-1]**2 /
+                          (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
+            # Cytoplasmic diffusion infinite
+            # f = (self.total-sum(Mn))/len(Mn)*(self.k0+self.gamma*Mn[1:-1]**2 /
+            #                     (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
+            Rm = self.dM*delM + f
+            Rc = self.dC*delC - f
+            # Return arrays with first and last two elements equal
+            # respecitvely, to impose zero derivatives
+            return r_[Rm[0], Rm, Rm[-1]], r_[Rc[0], Rc, Rc[-1]]
+
+        def neu_OT(Mn, Cn):
+            '''
+            THIS HAS NOT BEEN TESTED
+            Reaction terms for Otsuji, Von Neumann boundary conditions,
+            setting the derivative at the boundaries to zero.
             '''
             delM = laplacianNEU(Mn, self.dx)
             delC = laplacianNEU(Cn, self.dx)
@@ -274,8 +301,10 @@ class ParSim(object):
             # f = Cn[1:-1]*(self.k0 + self.gamma*Mn[1:-1]**2 /
             #               (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
             # Cytoplasmic diffusion infinite
-            f = (self.total-sum(Mn))/len(Mn)*(self.k0+self.gamma*Mn[1:-1]**2 /
-                                (self.K**2+Mn[1:-1]**2)) - self.delta*Mn[1:-1]
+            f = self.a1*((self.total-sum(Mn))/len(Mn) -
+                         ((self.total-sum(Mn)/len(Mn)+Mn[1:-1])) /
+                         (self.a2*self.s*((self.total-sum(Mn)/len(Mn) +
+                          Mn[1:-1]))+1)**2)
             Rm = self.dM*delM + f
             Rc = self.dC*delC - f
             # Return arrays with first and last two elements equal
@@ -309,8 +338,11 @@ class ParSim(object):
         elif self.mechanism is 2:
             self.set_init_profile_wave_pin()
             neu = neu_WP
+        elif self.mechanism is 3:
+            self.set_init_profile_OT()
+            neu = neu_OT
 
-        print(self.sys_size)
+
         A0 = self.A[:, 0]
         P0 = self.P[:, 0]
         self.t = [0]
@@ -401,7 +433,11 @@ class ParSim(object):
                 if (An_new[0] < Pn_new[0]) or (Pn_new[-1] < An_new[-1]):
                     break
             elif self.mechanism is 2:
-                pass
+                if max(An_new)/min(An_new) - 1 < 0.01:
+                    self.finished_in_time = 0
+                    break
+                else:
+                    self.finished_in_time = 2
         self.A[:, i] = An_new
         self.P[:, i] = Pn_new
         self.t_stored.append(self.t[-1])

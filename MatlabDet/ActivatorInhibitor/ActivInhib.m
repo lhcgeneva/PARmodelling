@@ -40,10 +40,12 @@ save wp.mat
 % csvwrite('wave_pinning_matlab_sizeDosageTopBot.csv', [conc_tot', si', top, bot]);
 %% Otsuji
 clear all;
-n_s = 30; % Precision of sampling of cell sizes
+n_s = 20; % Precision of sampling of cell sizes
 si = linspace(4, 20, n_s); % cell sizes
-n = 30; % Precision of sampling of concentrations
+si = linspace(5, 5.1, n_s); % cell sizes
+n = 20; % Precision of sampling of concentrations
 conc_tot = logspace(-1, 1.7, n); % concentrations
+conc_tot = linspace(1.5, 2.5, n); % concentrations
 a1 = 1;
 a2 = 0.7*ones(1, length(conc_tot));%*conc_tot; % a2 needs to be scaled by concentration for right antagonism
 s = 1;
@@ -63,12 +65,32 @@ for j = 1:length(si)
 end
 toc
 
-% [~, top]=min(fliplr(logical),[],2);
-% size_logical = size(logical);
-% top = size_logical(2) - top + 1;
-% [~, bot]=min(logical,[],2);
+[~, top]=min(fliplr(logical),[],2);
+size_logical = size(logical);
+top = size_logical(2) - top + 1;
+[~, bot]=min(logical,[],2);
 % save ot.mat
 % csvwrite('otsuji_matlab_sizeDosageTopBot.csv', [conc_tot', si', top, bot]);
+%% Get smoothed outline by averaging all sizes with same concentration
+u = unique(top);
+u = u(u<length(top));
+sizes_smooth = zeros(1, length(u));
+conc_smooth = zeros(1, length(u));
+
+for i = 1:length(u)
+    sizes_smooth(i) = mean(si(top==u(i)));
+    conc_smooth(i) = mean([conc_tot(u(i)),conc_tot(u(i)+1)]);
+end
+%% Bottom
+u = unique(bot);
+u = u(u>1);
+sizes_smooth = zeros(1, length(u));
+conc_smooth = zeros(1, length(u));
+
+for i = 1:length(u)
+    sizes_smooth(i) = mean(si(bot==u(i)));
+    conc_smooth(i) = mean([conc_tot(u(i)),conc_tot(u(i)-1)]);
+end
 %% Goryachev Nate
 tic
 n_s = 10; % Precision of sampling of cell sizes
@@ -126,7 +148,7 @@ concs = repmat(conc_tot', 1, n_s)';
 % logical = cell2mat(cellfun(@(x, y) ((max(x') - min(x'))./(sum(x')+sum(y'))*200) < 0.01, u1_all, u2_all, 'uni', 0)');
 logical = cell2mat(cellfun(@(x) (max(x') - min(x'))./max(x')<0.05, u1_all, 'uni', 0)');
 
-figure; hold on;
+% figure; hold on;
 plot(sizes(logical==0), concs(logical==0), '.', 'MarkerSize', 15);
 plot(sizes(logical==1), concs(logical==1), '.', 'MarkerSize', 15);
 ax = gca;

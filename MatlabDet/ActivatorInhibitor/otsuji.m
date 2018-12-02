@@ -2,7 +2,7 @@ function [u1, u2] = otsuji(si, D1, D2, a1, a2, s, conc_tot)
 % Mass conserved model similar to Otsuji et al, 2007
 
 x = linspace(0, si, 200);
-t = 0:1:1500;
+t = 0:1:10000;
 ic = @(x) ai_ic(x, si, conc_tot);
 pde = @(x, t, u, DuDx) ai_pde(x, t, u, DuDx, D1, D2, a1, a2, s);
 options = odeset('RelTol',1e-13,'AbsTol',1e-13);

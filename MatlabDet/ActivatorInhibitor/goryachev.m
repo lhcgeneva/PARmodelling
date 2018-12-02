@@ -2,7 +2,7 @@ function [x, u1, u2, mass] = goryachev(si, D1, D2, a1, a2, a3, conc_tot)
 % Mass conserved model from goryachev FEBS letters
 
 x = linspace(0, si, 200);
-t = 0:1:100000;
+t = 0:1:10000;
 ic = @(x) ai_ic(x, si, conc_tot);
 pde = @(x, t, u, DuDx) ai_pde(x, t, u, DuDx, D1, D2, a1, a2, a3);
 options = odeset('RelTol',1e-13,'AbsTol',1e-13);

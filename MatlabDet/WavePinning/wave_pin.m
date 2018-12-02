@@ -2,7 +2,7 @@ function [u1, u2] = wave_pin(Da, Dc, si, delta, gamma, K, conc_tot, k0)
 % Mass conserved model for wave pinning
 
 x = linspace(0, si, 200);
-t = 0:1:1000;
+t = 0:1:10000;
 ic = @(x) wp_ic(x, si, conc_tot);
 pde = @(x, t, u, DuDx) wp_pde(x, t, u, DuDx, Da, Dc, delta, gamma, K, k0);
 options = odeset('RelTol',1e-13,'AbsTol',1e-13);

@@ -16,7 +16,7 @@ import time
 class ParSim(object):
 
     def __init__(self, bc='NEU', dt=0.01, grid_size=100, mechanism=1,
-                 param_dict=None, ss_prec=1.001, T=1500, store_interval=10):
+                 param_dict=None, ss_prec=1.001, T=10000, store_interval=10):
         '''
         mechanism: 1 - PAR system
                    2 - WP system

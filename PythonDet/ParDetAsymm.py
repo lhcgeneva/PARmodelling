@@ -91,9 +91,13 @@ class ParSim(object):
     def plot_steady_state(self, c1='salmon', c2='cornflowerblue',
                           lab='_nolabel_', alpha=1.0, lw=1.5, linestyle='-',
                           norm=False, printLast=False):
-        # x = linspace(0, self.grid_size*self.dx, self.grid_size)
-        x = linspace(-self.grid_size*self.dx/2, self.grid_size*self.dx/2,
-                     self.grid_size)
+        # Absolute scale
+        x = linspace(0, self.grid_size*self.dx, self.grid_size)
+        # Relative to cell size
+        # x = linspace(0, 1, self.grid_size)
+        # 0 at boundary
+        # x = linspace(-self.grid_size*self.dx/2, self.grid_size*self.dx/2,
+        #              self.grid_size)
         # for ii, i in enumerate(round(linspace(1, self.A.shape[1], 10))):
         if printLast:
             t_points = [1]
@@ -106,10 +110,13 @@ class ParSim(object):
             if norm:
                 ya = (ya-min(ya))/(max(ya)-min(ya))
                 yp = (yp-min(yp))/(max(yp)-min(yp))
-            plot(x, ya, c1, label='_nolabel_', alpha=alpha/(ii+1)/3+0.34,
+            plot(x, ya, c1, label='_nolabel_', alpha=alpha,
                  lw=lw, linestyle=linestyle)
-            plot(x, yp, c2, label=lab, alpha=alpha/(ii+1)/3+0.34, lw=lw,
+            plot(x, yp, c2, label=lab, alpha=alpha, lw=lw,
                  linestyle=linestyle)
+        
+        ax = gca()
+        ax.set_ylim((0, 1.1*max(self.A.max(), self.P.max())))
         if self.t[-1] >= self.T:
             print('Steady state not reached, plotting last time point.')
         # show()

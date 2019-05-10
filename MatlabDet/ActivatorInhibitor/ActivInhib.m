@@ -2,6 +2,7 @@
 %% entire phase space, Size Limit WP, x = 6.429 ... 6.857, y 1.035, 1.056
 clear all;
 si = [linspace(6, 8, 15), linspace(8.1, 21, 35)];
+si = [linspace(6.7, 6.9, 10), linspace(7.0, 10, 15), linspace(10.2, 21, 25)];
 conc_tot = [linspace(0.95, 1.03, 14), linspace(1.035, 1.08, 22), linspace(1.095, 1.2, 14)]; % concentrations
 Da = 0.1;
 workspace_name = 'wp_10000.mat';
@@ -35,6 +36,7 @@ u1_all = cell(1, length(si));
 u2_all = cell(1, length(si));
 
 for j = 1:length(si)
+    disp(j);
     u1 = zeros(length(conc_tot), 200);
     u2 = zeros(length(conc_tot), 200);
     parfor i = 1:length(conc_tot)
@@ -107,39 +109,22 @@ size_logical = size(logical);
 top = size_logical(2) - top + 1;
 [~, bot]=min(logical,[],2);
 save(workspace_name);
-%% Top: get smoothed outline by averaging all sizes with same concentration
-u = unique(top);
-u = u(u<length(top));
-sizes_smooth_top = zeros(1, length(u));
-conc_smooth_top = zeros(1, length(u));
-
-for i = 1:length(u)
-    sizes_smooth_top(i) = mean(si(top==u(i)));
-    conc_smooth_top(i) = mean([conc_tot(u(i)),conc_tot(u(i)+1)]);
-end
-%% Bottom: same as above
-u = unique(bot);
-u = u(u>1);
-sizes_smooth_bot = zeros(1, length(u));
-conc_smooth_bot = zeros(1, length(u));
-
-for i = 1:length(u)
-    sizes_smooth_bot(i) = mean(si(bot==u(i)));
-    conc_smooth_bot(i) = mean([conc_tot(u(i)),conc_tot(u(i)-1)]);
-end
 %% Otsuji files for Python
 csvwrite('otsuji_matlab_sizeDosageTop_10000.csv', [sizes_smooth_top', conc_smooth_top']);
 csvwrite('otsuji_matlab_sizeDosageBot_10000.csv', [sizes_smooth_bot', conc_smooth_bot']);
 %% WP files for Python
-csvwrite('WP_matlab_sizeDosageTop.csv', [sizes_smooth_top', conc_smooth_top']);
-csvwrite('WP_matlab_sizeDosageBot.csv', [sizes_smooth_bot', conc_smooth_bot']);
+csvwrite('WP_matlab_sizeDosageTop_10000.csv', [sizes_smooth_top', conc_smooth_top']);
+csvwrite('WP_matlab_sizeDosageBot_10000.csv', [sizes_smooth_bot', conc_smooth_bot']);
+%% GOR files for Python
+csvwrite('GOR_matlab_sizeDosageTop_10000.csv', [sizes_smooth_top', conc_smooth_top']);
+csvwrite('GOR_matlab_sizeDosageBot_10000.csv', [sizes_smooth_bot', conc_smooth_bot']);
                                                 
 %% Goryachev Nate entire phase space
 clear all;
-si = linspace(5, 20, 20); % cell sizes, DO NOT USE LOG SPACING, OTHERWISE
+si = [linspace(9, 11.8, 30), linspace(12, 21, 20)]; % cell sizes, DO NOT USE LOG SPACING, OTHERWISE
                             % boundary calculation below (average) doesn't
                             % work anymore!
-conc_tot = linspace(0.1, 50, 20); % concentrations
+conc_tot = [linspace(0.1, 5, 40), linspace(5.1, 10, 10)]; % concentrations
 D1 = 0.1;
 workspace_name = 'goryachev_10000.mat';
 %% Goryachev L 2 fold
@@ -186,30 +171,43 @@ for j = 1:length(si)
     end
     u1_all{j} = u1;
     u2_all{j} = u2;
+    disp(j);
 end
 toc
-logical = cell2mat(cellfun(@(x, y) ((max(x') - min(x'))./...
-                   (sum(x')+sum(y'))*200) < 0.01, u1_all, u2_all, 'uni', 0)');
+%%
+% logical = cell2mat(cellfun(@(x) (max(x') - min(x'))./max(x')<0.05, u1_all, 'uni', 0)');
+% logical = cell2mat(cellfun(@(x, y) ((max(x') - min(x'))./...
+%                    (sum(x')+sum(y'))*200) < 0.01, u1_all, u2_all, 'uni', 0)');
+logical = cell2mat(cellfun(@(x,y) (max(x') - min(x'))./max(max(x'), max(y'))<0.05, u1_all, u2_all,'uni', 0)');
 
 [~, top]=min(fliplr(logical),[],2);
 size_logical = size(logical);
 top = size_logical(2) - top + 1;
 [~, bot]=min(logical,[],2);
 % csvwrite('goryachev_matlab_sizeDosageTopBot.csv', [conc_tot', si', top, bot]);
-save(workspace_name);
-%% Plot all simulations with one figure per size
-for j = 1 :  length(u1_all)
-    figure; hold on;
-    for i = 1:n
-    % plot(u*ones(size(u1(i, :))));
-%     plot(u1_all{j}(i, :)/max(u1_all{j}(i, :))); % Normalized to max
-    plot(u1_all{j}(i, :), '--b');
-%     plot(u2_all{j}(i, :), '-r');
-    % rho_tot = sum(u1(i, :))+sum(u2(i, :));
-    end
+% save(workspace_name);
+%% Top: get smoothed outline by averaging all sizes with same concentration
+u = unique(top);
+u = u(u<length(top));
+sizes_smooth_top = zeros(1, length(u));
+conc_smooth_top = zeros(1, length(u));
+
+for i = 1:length(u)
+    sizes_smooth_top(i) = mean(si(top==u(i)));
+    conc_smooth_top(i) = mean([conc_tot(u(i)),conc_tot(u(i)+1)]);
+end
+%% Bottom: same as above
+u = unique(bot);
+u = u(u>1);
+sizes_smooth_bot = zeros(1, length(u));
+conc_smooth_bot = zeros(1, length(u));
+
+for i = 1:length(u)
+    sizes_smooth_bot(i) = mean(si(bot==u(i)));
+    conc_smooth_bot(i) = mean([conc_tot(u(i)),conc_tot(u(i)-1)]);
 end
 %% Plot entire phase space
-% n=30; n_s = 30;
+n=50; n_s = 50;
 sizes = repmat(si', 1, n);
 concs = repmat(conc_tot', 1, n_s)';
 % logical = cell2mat(cellfun(@(x) (max(x') - min(x'))./max(x')<0.05, u1_all, 'uni', 0)');
@@ -221,7 +219,99 @@ ax = gca;
 ax.FontSize=18;
 xlabel('system size (\mum)');
 ylabel('concentration (a.u.)');
+%% Get lambda vs D: Otsuji
+clear all;
+% This is for effect on diffusion, comment out for effect on rates
+% ds = [0.05, 0.1, 0.15, 0.2, 0.3, 0.4]; % diffusion
+% a1 = [1, 1, 1, 1, 1, 1]; % rates
+% The following is to show effect of rates, comment out for diffusion!
+ds = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
+a1 = [2, 1.75, 1.5, 1.25, 1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2];
+u1 = zeros(length(ds), 200);
+u2 = zeros(length(ds), 200);
+parfor i = 1:length(ds)
+    [u, v] = otsuji(100, ds(i), 100000, a1(i), 0.7, 1, 6);
+    u1(i, :) = u(end, :);
+    u2(i, :) = v(end, :);
+end
+lamOT = 1./(abs(min(diff(u1'))./max(u1, [], 2)'));
+%% Wave pinning
+delta = 1/9; gamma = 1/9; k0 = 0.067/9;
+%This is for effect on diffusion, comment out for effect on rates
+% ds = [0.05, 0.1, 0.15, 0.2, 0.3, 0.4]; % diffusion
+% ratio = [1, 1, 1, 1, 1, 1]; % rates
+% The following is to show effect of rates, comment out for diffusion!
+ds = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
+ratio = [2, 1.75, 1.5, 1.25, 1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2];
+
+
+u1 = zeros(length(ds), 200);
+u2 = zeros(length(ds), 200);
+parfor i = 1:length(ds)
+    [u, v] = wave_pin(ds(i), 10000, 100, delta*ratio(i), gamma*ratio(i),...
+                      1, 1.05, k0*ratio(i));
+    u1(i, :) = u(end, :);
+    u2(i, :) = v(end, :);
+end
+lamWP = 1./(abs(min(diff(u1'))./max(u1, [], 2)'));
+
+%% Goryachev
+a1 = 0.67/101; a2 = 0.33/101; a3 = 0.01;
+%This is for effect on diffusion, comment out for effect on rates
+% ds = [0.05, 0.1, 0.15, 0.2, 0.3, 0.4]; % diffusion
+% ratio = [1, 1, 1, 1, 1, 1]; % rates
+% The following is to show effect of rates, comment out for diffusion!
+ds = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
+ratio = [2, 1.75, 1.5, 1.25, 1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2];
+
+u1 = zeros(length(ds), 200);
+u2 = zeros(length(ds), 200);
+parfor i = 1:length(ds)
+    [x, u, v, mass] = goryachev(100, ds(i), 10000000, a1*ratio(i), ...
+                                a2*ratio(i), a3*ratio(i), 6);
+    u1(i, :) = u(end, :);
+    u2(i, :) = v(end, :);
+end
+lamGOR = 1./(abs(min(diff(u1'))./max(u1, [], 2)'));
+%% For diffusion or rates, uncomment/comment out relevant line
+% dlmwrite('D_vs_lambda.csv', [[ds]', [lamGOR]', [lamWP]', [lamOT]']);
+dlmwrite('Rates_vs_lambda.csv', [[ratio]', [lamGOR]', [lamWP]', [lamOT]']);
+%% Get lambda vs size: Otsuji
+clear all;
+si = [15, 20, 30, 40, 50, 70, 90, 120]; % cell sizes
+u1 = zeros(length(si), 200);
+u2 = zeros(length(si), 200);
+parfor i = 1:length(si)
+    [u, v] = otsuji(si(i), 0.1, 100000, 1, 0.7, 1, 6);
+    u1(i, :) = u(end, :);
+    u2(i, :) = v(end, :);
+end
+lamOT = 1./(abs(min(diff(u1'))./max(u1, [], 2)'))./200.*si;
+%% Wave pinning
+u1 = zeros(length(si), 200);
+u2 = zeros(length(si), 200);
+
+parfor i = 1:length(si)
+    [u, v] = wave_pin(0.1, 10000, si(i), 1/9, 1/9, 1, 1.05, 0.067/9);
+    u1(i, :) = u(end, :);
+    u2(i, :) = v(end, :);
+end
+lamWP = 1./(abs(min(diff(u1'))./max(u1, [], 2)'))./200.*si;
+
+%% Goryachev
+u1 = zeros(length(si), 200);
+u2 = zeros(length(si), 200);
+si = 200;
+for i = 1:length(si)
+    [x, u, v, mass] = goryachev(si(i), 0.1, 10000000, 0.67/101, 0.33/101, 0.01, 6);
+    u1(i, :) = u(end, :);
+    u2(i, :) = v(end, :);
+end
+lamGOR = 1./(abs(min(diff(u1'))./max(u1, [], 2)'))./200.*si;
+%%
+dlmwrite('Size_vs_lambda.csv', [si', lamGOR', lamWP', lamOT']);
 %% Calculate CPSS vs D
+
 % Breakdown for Otsuji happens between 1.0 and 1.25, verify this for
 % different Ds and sizes. This can be done using Lcpss =? A*sqrt(D), with 
 % A = 1.125/sqrt(0.1) = 3.5576 and turns out to be true if cytoplasmic 

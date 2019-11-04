@@ -124,8 +124,8 @@ class ParSim(object):
     def set_init_profile(self):
         self.A = ones((self.grid_size, int(1.2*self.T/self.store_interval)))
         self.P = ones((self.grid_size, int(1.2*self.T/self.store_interval)))
-        self.A[int(round(self.grid_size*0.9)):, 0] = 0
-        self.P[0:int(round(self.grid_size*0.9)), 0] = 0
+        self.A[int(round(self.grid_size/2)):, 0] = 0
+        self.P[0:int(round(self.grid_size/2)), 0] = 0
 
         # self.P = 4*ones((self.grid_size, int(1.2*self.T/self.store_interval)))
         # self.P[0:int(round(0.8*self.grid_size)), 0] = 0
